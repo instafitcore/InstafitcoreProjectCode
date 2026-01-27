@@ -242,74 +242,102 @@ export default function BookServiceModal({ service, isOpen, onClose }: Props) {
     }
   }, [address.pincode, allowedPincodes]);
 
+const autoFillAddress = () => {
+  // 🚫 In-app browser detection
+  const ua = navigator.userAgent || "";
+  const isInApp =
+    /FBAN|FBAV|Instagram|WhatsApp|Line|Twitter/i.test(ua);
 
-  const autoFillAddress = async () => {
-    if (!navigator.geolocation) {
-      toast({
-        title: "Not supported",
-        description: "Geolocation is not supported by your browser",
-        variant: "destructive",
-      });
-      return;
-    }
+  if (isInApp) {
+    toast({
+      title: "Location not supported",
+      description: "Please open this page in Chrome or Safari to use location.",
+      variant: "destructive",
+    });
+    return;
+  }
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        try {
-          const { latitude, longitude } = position.coords;
+  if (!navigator.geolocation) {
+    toast({
+      title: "Not supported",
+      description: "Geolocation is not supported on this device.",
+      variant: "destructive",
+    });
+    return;
+  }
 
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
-            {
-              headers: {
-                Accept: "application/json",
-                "User-Agent": "InstaFitCore/1.0 (contact@instafitcore.com)",
-              },
-            }
-          );
+  toast({
+    title: "Detecting location...",
+    description: "Please allow location access",
+  });
 
-          const data = await res.json();
-          console.log("Reverse geocode response:", data);
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      try {
+        const { latitude, longitude } = position.coords;
 
-          if (!data?.address) {
-            throw new Error("No address found");
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
+          {
+            headers: {
+              Accept: "application/json",
+              "User-Agent": "InstaFitCore/1.0",
+            },
           }
+        );
 
-          const addr = data.address;
+        const data = await res.json();
 
-          setAddress((prev) => ({
-            ...prev,
-            areaZone: addr.suburb || addr.neighbourhood || "",
-            cityTown: addr.city || addr.town || addr.village || "",
-            state: addr.state || "",
-            pincode: addr.postcode || "",
-            streetLocality: addr.road || "",
-          }));
+        if (!data?.address) throw new Error("No address found");
 
-          toast({
-            title: "Address filled",
-            description: "Location details added automatically",
-            variant: "success",
-          });
-        } catch (err) {
-          console.error("Auto-fill error:", err);
-          toast({
-            title: "Failed",
-            description: "Could not fetch address details",
-            variant: "destructive",
-          });
-        }
-      },
-      (error) => {
-        console.error("Geolocation error:", error);
+        const addr = data.address;
+
+        setAddress((prev) => ({
+          ...prev,
+          streetLocality: addr.road || "",
+          areaZone: addr.suburb || addr.neighbourhood || "",
+          cityTown: addr.city || addr.town || addr.village || "",
+          state: addr.state || "",
+          pincode: addr.postcode || "",
+        }));
+
         toast({
-          title: "Permission denied",
-          description: "Location access is required to auto-fill address",
+          title: "Address filled",
+          description: "Location detected successfully",
+          variant: "success",
+        });
+      } catch (err) {
+        toast({
+          title: "Failed",
+          description: "Unable to fetch address from location",
           variant: "destructive",
         });
       }
-    );
-  };
+    },
+    (error) => {
+      let message = "Unable to fetch location.";
+
+      if (error.code === 1)
+        message = "Location permission denied. Please enable it in browser settings.";
+      else if (error.code === 2)
+        message = "Location unavailable. Please try again outdoors.";
+      else if (error.code === 3)
+        message = "Location request timed out. Please retry.";
+
+      toast({
+        title: "Location Error",
+        description: message,
+        variant: "destructive",
+      });
+    },
+    {
+      enableHighAccuracy: true, // 🔥 REQUIRED FOR MOBILE
+      timeout: 15000,           // 🔥 REQUIRED
+      maximumAge: 0,            // 🔥 REQUIRED
+    }
+  );
+};
+
 
   const getFilteredTimings = () => {
     if (!date) return timings;

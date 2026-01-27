@@ -785,53 +785,83 @@ export default function CartPage() {
         await handleSubmit(payment_id, order_id);
     };
 
-    const handleUseMyLocation = async () => {
-        if (!navigator.geolocation) {
-            toast({
-                title: "Not supported",
-                description: "Geolocation is not supported in this browser.",
-                variant: "destructive",
-            });
-            return;
-        }
+   const handleUseMyLocation = () => {
+  if (!navigator.geolocation) {
+    toast({
+      title: "Not supported",
+      description: "Geolocation is not supported on this device.",
+      variant: "destructive",
+    });
+    return;
+  }
 
-        navigator.geolocation.getCurrentPosition(
-            async (position) => {
-                try {
-                    const { latitude, longitude } = position.coords;
-                    const res = await fetch(
-                        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
-                        {
-                            headers: {
-                                Accept: "application/json",
-                                "User-Agent": "InstaFitCore/1.0 (support@instafitcore.com)",
-                            },
-                        }
-                    );
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      try {
+        const { latitude, longitude } = position.coords;
 
-                    const data = await res.json();
-                    if (!data?.address) throw new Error("No address found");
-
-                    const addr = data.address;
-                    setAddressFields((prev) => ({
-                        ...prev,
-                        streetLocality: addr.road || "",
-                        areaZone: addr.suburb || addr.neighbourhood || "",
-                        cityTown: addr.city || addr.town || addr.village || "",
-                        state: addr.state || "",
-                        pincode: addr.postcode || "",
-                    }));
-
-                    toast({ title: "Location detected", description: "Address auto-filled.", variant: "success" });
-                } catch (err) {
-                    toast({ title: "Failed", description: "Could not fetch address.", variant: "destructive" });
-                }
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
+          {
+            headers: {
+              Accept: "application/json",
+              "User-Agent": "InstaFitCore/1.0",
             },
-            () => {
-                toast({ title: "Permission denied", description: "Please allow location access.", variant: "destructive" });
-            }
+          }
         );
-    };
+
+        const data = await res.json();
+
+        if (!data?.address) throw new Error();
+
+        const addr = data.address;
+
+        setAddressFields((prev) => ({
+          ...prev,
+          streetLocality: addr.road || "",
+          areaZone: addr.suburb || addr.neighbourhood || "",
+          cityTown: addr.city || addr.town || addr.village || "",
+          state: addr.state || "",
+          pincode: addr.postcode || "",
+        }));
+
+        toast({
+          title: "Location detected",
+          description: "Address filled successfully.",
+          variant: "success",
+        });
+      } catch {
+        toast({
+          title: "Failed",
+          description: "Unable to detect address from location.",
+          variant: "destructive",
+        });
+      }
+    },
+    (error) => {
+      let msg = "Location access failed.";
+
+      if (error.code === 1)
+        msg = "Please allow location permission in browser settings.";
+      if (error.code === 2)
+        msg = "Location unavailable.";
+      if (error.code === 3)
+        msg = "Location request timed out.";
+
+      toast({
+        title: "Location Error",
+        description: msg,
+        variant: "destructive",
+      });
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0,
+    }
+  );
+};
+
 
     useEffect(() => {
         const errors = validateAddress(addressFields);
