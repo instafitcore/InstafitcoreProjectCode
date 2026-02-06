@@ -35,6 +35,7 @@ type AuthMode = "login" | "register";
 export default function FullNavbar() {
   const { user } = useUser();
   const pathname = usePathname();
+  const AUTO_LOGOUT_TIME = 4 * 60 * 60 * 1000; // 4 hours in ms
 
   const [showAuth, setShowAuth] = useState(false);
   const [mode, setMode] = useState<AuthMode>("login");
@@ -51,6 +52,7 @@ export default function FullNavbar() {
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   // STATIC CATEGORIES
   const staticCategories = [
@@ -115,6 +117,44 @@ export default function FullNavbar() {
       subServices: [],
     },
   ];
+
+  useEffect(() => {
+    if (!user) return;
+
+let logoutTimer: ReturnType<typeof setTimeout>;
+
+    const resetTimer = () => {
+      if (logoutTimer) clearTimeout(logoutTimer);
+
+      logoutTimer = setTimeout(async () => {
+        await supabase.auth.signOut();
+        router.push("/site");
+      }, AUTO_LOGOUT_TIME);
+    };
+
+    // User activity events
+    const events = [
+      "mousemove",
+      "mousedown",
+      "keydown",
+      "scroll",
+      "touchstart",
+    ];
+
+    events.forEach((event) =>
+      window.addEventListener(event, resetTimer)
+    );
+
+    // Start timer initially
+    resetTimer();
+
+    return () => {
+      if (logoutTimer) clearTimeout(logoutTimer);
+      events.forEach((event) =>
+        window.removeEventListener(event, resetTimer)
+      );
+    };
+  }, [user, router]);
 
 
   // Close search dropdown outside click
@@ -229,7 +269,6 @@ export default function FullNavbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const router = useRouter();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
