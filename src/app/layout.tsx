@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Instafitcore",
-  description: "Instafitcore – Fitness & Wellness Platform",
+  description: "Instafitcore – Home Solutions",
   icons: {
     icon: [
       { url: "/logoicon.png", sizes: "20x30", type: "image/png" },
