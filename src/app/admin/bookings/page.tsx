@@ -21,11 +21,11 @@ type Booking = {
     booking_time: string;
     total_price: number;
     status: string;
-    payment_status?: string;
     created_at: string;
     address: string | null;
     employee_name?: string | null;
     employee_phone?: string | null;
+    payment_id?: string | null; // Added for payment status
 };
 
 // Define the authoritative list of status options and their order
@@ -49,6 +49,15 @@ const getStatusClasses = (status: string) => {
             return "bg-green-100 text-green-700 border-green-300";
         default:
             return "bg-gray-100 text-gray-700 border-gray-300";
+    }
+};
+
+// Helper function for payment status colors
+const getPaymentStatusClasses = (paymentId: string | null) => {
+    if (paymentId) {
+        return "bg-green-100 text-green-700 border border-green-300";
+    } else {
+        return "bg-red-100 text-red-700 border border-red-300";
     }
 };
 
@@ -91,7 +100,7 @@ export default function BookingsPage() {
             "Employee Name": b.employee_name || "Not Assigned",
             "Employee Phone": b.employee_phone || "N/A",
             "Booking Status": b.status,
-            "Payment Status": b.payment_status || "N/A",
+            "Payment Status": b.payment_id ? "Paid" : "Not Paid",
             "Created At": new Date(b.created_at).toLocaleString(),
         }));
 
@@ -122,7 +131,7 @@ export default function BookingsPage() {
             b.employee_name || "Not Assigned",
             b.employee_phone || "N/A",
             b.status,
-            b.payment_status || "N/A",
+            b.payment_id ? "Paid" : "Not Paid",
             new Date(b.created_at).toLocaleString(),
         ]);
 
@@ -202,6 +211,13 @@ export default function BookingsPage() {
             results = results.filter((b) => b.status === statusFilter);
         }
 
+        if (paymentFilter !== "All Payment Status") {
+            if (paymentFilter === "Paid") {
+                results = results.filter((b) => b.payment_id);
+            } else if (paymentFilter === "Not Paid") {
+                results = results.filter((b) => !b.payment_id);
+            }
+        }
 
         if (serviceTypeFilter !== "All Service Types") {
             results = results.filter((b) => b.service_types.includes(serviceTypeFilter));
@@ -338,7 +354,7 @@ export default function BookingsPage() {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
 
                     {/* 1. Search */}
                     <div className="relative">
@@ -367,7 +383,21 @@ export default function BookingsPage() {
                         <ChevronDown className="absolute right-3 top-3.5 text-gray-400 pointer-events-none w-4 h-4" />
                     </div>
 
-                    {/* 3. Service Type Filter with Down Arrow */}
+                    {/* 3. Payment Status Filter with Down Arrow */}
+                    <div className="relative">
+                        <select
+                            value={paymentFilter}
+                            onChange={(e) => setPaymentFilter(e.target.value)}
+                            className="w-full appearance-none border border-gray-200 rounded-xl px-4 py-2.5 bg-white focus:ring-2 focus:ring-instafitcore-green focus:border-instafitcore-green outline-none cursor-pointer text-gray-700"
+                        >
+                            <option>All Payment Status</option>
+                            <option>Paid</option>
+                            <option>Not Paid</option>
+                        </select>
+                        <ChevronDown className="absolute right-3 top-3.5 text-gray-400 pointer-events-none w-4 h-4" />
+                    </div>
+
+                    {/* 4. Service Type Filter with Down Arrow */}
                     <div className="relative">
                         <select
                             value={serviceTypeFilter}
@@ -382,11 +412,12 @@ export default function BookingsPage() {
                         <ChevronDown className="absolute right-3 top-3.5 text-gray-400 pointer-events-none w-4 h-4" />
                     </div>
 
-                    {/* 4. Action Button */}
+                    {/* 5. Action Button */}
                     <button
                         onClick={() => {
                             setSearch("");
                             setStatusFilter("All Status");
+                            setPaymentFilter("All Payment Status");
                             setServiceTypeFilter("All Service Types");
                         }}
                         className="w-full py-2.5 text-gray-500 font-medium border border-gray-200 rounded-xl hover:bg-gray-50 hover:text-gray-700 transition-all flex items-center justify-center gap-2"
@@ -414,13 +445,14 @@ export default function BookingsPage() {
                             <th className="p-4 text-right">Price</th>
                             <th className="p-4">Address</th>
                             <th className="p-4">Assigned Employee</th>
+                            <th className="p-4">Payment Status</th>
                             <th className="p-4">Status</th>
                         </tr>
                     </thead>
                     <tbody className="text-gray-800 divide-y divide-gray-100">
                         {/* Loading/No Bookings logic */}
                         {loading || filtered.length === 0 ? (
-                            <tr><td colSpan={8} className="p-10 text-center text-gray-500 text-lg">{loading ? "Loading bookings..." : "No bookings found matching filters."}</td></tr>
+                            <tr><td colSpan={10} className="p-10 text-center text-gray-500 text-lg">{loading ? "Loading bookings..." : "No bookings found matching filters."}</td></tr>
                         ) : (
                             filtered.map((b) => (
                                 <tr key={b.id} className="hover:bg-blue-50/50 transition-colors duration-150">
@@ -435,7 +467,7 @@ export default function BookingsPage() {
                                         {b.razorpay_order_id ? (
                                             b.razorpay_order_id
                                         ) : (
-                                            <span className="text-gray-400 italic">Not Generated</span>
+                                            <span className="text-gray-400 italic">On Site Payment</span>
                                         )}
                                     </td>
 
@@ -470,6 +502,13 @@ export default function BookingsPage() {
                                         ) : (
                                             <span className="text-red-500 font-medium text-xs border border-red-300 bg-red-50 px-2 py-0.5 rounded-full">Not Assigned</span>
                                         )}
+                                    </td>
+
+                                    {/* Payment Status Column */}
+                                    <td className="p-4">
+                                        <span className={`px-3 py-1 text-xs font-bold rounded-full ${getPaymentStatusClasses(b.payment_id)}`}>
+                                            {b.payment_id ? "Paid" : "Not Paid"}
+                                        </span>
                                     </td>
 
                                     {/* Status Dropdown with Controlled Flow */}
@@ -521,10 +560,8 @@ export default function BookingsPage() {
                         {/* Form */}
                         <form onSubmit={assignEmployeeAndProceed} className="space-y-5">
                             <p className="text-gray-600 mb-5">
-                                <p className="text-gray-600 mb-5">
-                                    Assign employee for Order No:{" "}
-                                    <strong className="font-mono">{selectedBooking?.order_no}</strong>
-                                </p>
+                                Assign employee for Order No:{" "}
+                                <strong className="font-mono">{selectedBooking?.order_no}</strong>
                             </p>
 
                             {/* Employee Name Input */}

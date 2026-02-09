@@ -785,6 +785,34 @@ export default function CartPage() {
         await handleSubmit(payment_id, order_id);
     };
 
+    // Handle on-site payment (no payment_id, order_id)
+    const handleOnSitePayment = useCallback(async () => {
+        setSubmitAttempted(true);
+
+        if (cartItems.length === 0) {
+            toast({ title: "Cart empty", description: "Add items before checkout.", variant: "destructive" });
+            return;
+        }
+
+        const errors = validateAddress(addressFields);
+        setAddressErrors(errors);
+
+        const hasInvalidItems = cartItems.some((it) => !it.service || !it.selected_services?.length);
+        if (Object.keys(errors).length > 0 || hasInvalidItems) {
+            if (hasInvalidItems) {
+                toast({
+                    title: "Selection missing",
+                    description: "Please select service options for all items.",
+                    variant: "destructive",
+                });
+            }
+            return;
+        }
+
+        setIsSubmitting(true);
+        await handleSubmit(); // No payment_id, order_id for on-site
+    }, [cartItems, addressFields, toast, router, serviceablePincodes]);
+
    const handleUseMyLocation = () => {
   if (!navigator.geolocation) {
     toast({
@@ -1059,21 +1087,40 @@ export default function CartPage() {
                         <p style={{ color: PRIMARY_COLOR }} className="flex items-center">₹{cartTotal.toFixed(2)}</p>
                     </div>
 
-                    <button
-                        onClick={handleRazorpayPayment}
-                        disabled={
-                            cartItems.length === 0 ||
-                            cartItems.some((it) => !it.selected_services?.length) ||
-                            !isPincodeValid ||
-                            cartItems.some((it) => it.isUpdating) ||
-                            isSubmitting
-                        }
-                        className={`w-full mt-6 sm:mt-8 py-3 sm:py-4 text-white text-lg sm:text-xl font-bold rounded-xl shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-[1.01] hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed`}
-                        style={{ backgroundColor: PRIMARY_COLOR }}
-                    >
-                        {isSubmitting ? <><Loader2 className="animate-spin w-5 h-5 mr-2" />Processing...</> : "Continue"}
-                        <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 ml-2" />
-                    </button>
+                    {/* Payment Buttons */}
+                    <div className="flex flex-col sm:flex-row gap-4 mt-6 sm:mt-8">
+                        <button
+                            onClick={handleRazorpayPayment}
+                            disabled={
+                                cartItems.length === 0 ||
+                                cartItems.some((it) => !it.selected_services?.length) ||
+                                !isPincodeValid ||
+                                cartItems.some((it) => it.isUpdating) ||
+                                isSubmitting
+                            }
+                            className={`flex-1 py-3 sm:py-4 text-white text-lg sm:text-xl font-bold rounded-xl shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-[1.01] hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed`}
+                            style={{ backgroundColor: PRIMARY_COLOR }}
+                        >
+                            {isSubmitting ? <><Loader2 className="animate-spin w-5 h-5 mr-2" />Processing...</> : "Pay Now"}
+                            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 ml-2" />
+                        </button>
+
+                        <button
+                            onClick={handleOnSitePayment}
+                            disabled={
+                                cartItems.length === 0 ||
+                                cartItems.some((it) => !it.selected_services?.length) ||
+                                !isPincodeValid ||
+                                cartItems.some((it) => it.isUpdating) ||
+                                isSubmitting
+                            }
+                            className={`flex-1 py-3 sm:py-4 text-white text-lg sm:text-xl font-bold rounded-xl shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-[1.01] hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed`}
+                            style={{ backgroundColor: ACCENT_COLOR }}
+                        >
+                            {isSubmitting ? <><Loader2 className="animate-spin w-5 h-5 mr-2" />Processing...</> : "On-Site Payment"}
+                            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 ml-2" />
+                        </button>
+                    </div>
 
                     <div className="mt-4 sm:mt-6 p-3 text-xs sm:text-sm rounded-lg text-gray-600 bg-white border border-gray-200 flex items-center">
                         <Info className="w-3 h-3 sm:w-4 sm:h-4 mr-2 flex-shrink-0" />

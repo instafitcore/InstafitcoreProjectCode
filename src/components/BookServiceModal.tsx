@@ -566,6 +566,12 @@ export default function BookServiceModal({ service, isOpen, onClose }: Props) {
     }
   };
 
+  // --- On-Site Payment (No Razorpay) ---
+  const handleOnSitePayment = async () => {
+    if (!validateForm() || isSubmitting) return;
+    setIsSubmitting(true);
+    await handleSubmit(); // No payment_id, order_id for on-site
+  };
 
   // --- Save booking after payment ---
   // --- Save booking after payment ---
@@ -922,9 +928,14 @@ export default function BookServiceModal({ service, isOpen, onClose }: Props) {
               <p className="text-sm font-semibold text-gray-700">Tax (18% GST): ₹{taxAmount}</p>
               <p className="text-lg font-extrabold" style={{ color: ACCENT_COLOR }}>Total: ₹{totalPrice}</p>
             </div>
-            <button onClick={handleRazorpayPayment} disabled={isSubmitting || !isFormValid} className={`py-3 px-6 sm:px-8 text-white font-bold rounded-lg shadow-md transition-all duration-300 flex items-center justify-center w-full sm:w-auto ${isSubmitting || !isFormValid ? 'bg-gray-400 cursor-not-allowed' : 'hover:scale-[1.02] hover:shadow-xl'}`} style={{ backgroundColor: PRIMARY_COLOR }}>
-              {isSubmitting ? <><Loader2 className="animate-spin w-5 h-5 mr-2" />Booking...</> : "Confirm Booking"}
-            </button>
+            <div className="flex flex-col gap-2 w-full sm:w-auto">
+              <button onClick={handleRazorpayPayment} disabled={isSubmitting || !isFormValid} className={`py-3 px-6 sm:px-8 text-white font-bold rounded-lg shadow-md transition-all duration-300 flex items-center justify-center w-full sm:w-auto ${isSubmitting || !isFormValid ? 'bg-gray-400 cursor-not-allowed' : 'hover:scale-[1.02] hover:shadow-xl'}`} style={{ backgroundColor: PRIMARY_COLOR }}>
+                {isSubmitting ? <><Loader2 className="animate-spin w-5 h-5 mr-2" />Processing...</> : "Pay Now"}
+              </button>
+              <button onClick={handleOnSitePayment} disabled={isSubmitting || !isFormValid} className={`py-3 px-6 sm:px-8 text-white font-bold rounded-lg shadow-md transition-all duration-300 flex items-center justify-center w-full sm:w-auto ${isSubmitting || !isFormValid ? 'bg-gray-400 cursor-not-allowed' : 'hover:scale-[1.02] hover:shadow-xl'}`} style={{ backgroundColor: ACCENT_COLOR }}>
+                {isSubmitting ? <><Loader2 className="animate-spin w-5 h-5 mr-2" />Processing...</> : "On-Site Payment"}
+              </button>
+            </div>
           </div>
         </div>
 

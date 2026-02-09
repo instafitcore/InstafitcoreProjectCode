@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase-client";
+import { Eye, EyeOff } from "lucide-react"; // Import eye icons
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false); // State for password visibility
   const router = useRouter();
 
   const handleLogin = async () => {
@@ -28,10 +30,7 @@ export default function AdminLogin() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f5f7fa] px-4">
-
       <div className="bg-white shadow-xl rounded-3xl p-10 w-full max-w-md flex flex-col items-center">
-
-        {/* Logo */}
         {/* Logo */}
         <img
           src="/instlogo.png"
@@ -39,8 +38,8 @@ export default function AdminLogin() {
           className="w-56 md:w-64 object-contain mb-8"
         />
 
-
-        <h2 className="text-2xl font-bold mb-4 text-center text-gray-800 leading-tight">          Admin Login
+        <h2 className="text-2xl font-bold mb-4 text-center text-gray-800 leading-tight">
+          Admin Login
         </h2>
 
         {/* Error */}
@@ -61,14 +60,24 @@ export default function AdminLogin() {
                        focus:outline-none focus:ring-2 focus:ring-[#8ed26b]"
           />
 
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full p-3 rounded-lg bg-white border border-gray-300 
-                       focus:outline-none focus:ring-2 focus:ring-[#8ed26b]"
-          />
+          {/* Password Input with Eye Icon */}
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full p-3 pr-10 rounded-lg bg-white border border-gray-300 
+                         focus:outline-none focus:ring-2 focus:ring-[#8ed26b]"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+          </div>
 
           <button
             onClick={handleLogin}
@@ -83,8 +92,6 @@ export default function AdminLogin() {
         <p className="mt-6 text-center text-gray-500 text-sm">
           © {new Date().getFullYear()} Instafit Core
         </p>
-
-
       </div>
     </div>
   );
