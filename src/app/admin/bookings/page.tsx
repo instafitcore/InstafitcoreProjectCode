@@ -307,6 +307,27 @@ export default function BookingsPage() {
         }
     };
 
+    // Function to mark payment as paid
+    const markAsPaid = async (id: number) => {
+        const { error } = await supabase
+            .from("bookings")
+            .update({ payment_id: "on-site-paid" }) // Set a dummy value to indicate paid
+            .eq("id", id);
+
+        if (!error) {
+            setBookings((prev) =>
+                prev.map((b) =>
+                    b.id === id
+                        ? { ...b, payment_id: "on-site-paid" }
+                        : b
+                )
+            );
+        } else {
+            console.error("Error updating payment status:", error);
+            alert("Failed to update payment status.");
+        }
+    };
+
     // Helper function to determine if an option should be disabled
     const isStatusDisabled = (currentStatus: string, option: string): boolean => {
         const currentIndex = STATUS_OPTIONS.indexOf(currentStatus);
@@ -445,8 +466,8 @@ export default function BookingsPage() {
                             <th className="p-4 text-right">Price</th>
                             <th className="p-4">Address</th>
                             <th className="p-4">Assigned Employee</th>
-                            <th className="p-4">Payment Status</th>
-                            <th className="p-4">Status</th>
+                            <th className="p-4 text-center">Payment Status</th>
+                            <th className="p-4 text-center">Status</th>
                         </tr>
                     </thead>
                     <tbody className="text-gray-800 divide-y divide-gray-100">
@@ -463,14 +484,13 @@ export default function BookingsPage() {
                                         {b.customer_name}
                                         <div className="text-xs text-gray-500 font-normal mt-0.5">Types: {b.service_types.join(", ")}</div>
                                     </td>
-                                    <td className="p-4 font-mono text-xs text-gray-600 whitespace-nowrap">
+                                                                       <td className="p-4 font-mono text-xs text-gray-600 whitespace-nowrap">
                                         {b.razorpay_order_id ? (
                                             b.razorpay_order_id
                                         ) : (
                                             <span className="text-gray-400 italic">On Site Payment</span>
                                         )}
                                     </td>
-
 
                                     <td className="p-4 font-medium">{b.service_name}</td>
                                     <td className="p-4 text-sm whitespace-nowrap">
@@ -481,7 +501,7 @@ export default function BookingsPage() {
                                             <Clock className="w-3 h-3" /> <span className="font-medium">{b.booking_time}</span>
                                         </div>
                                     </td>
-                                                                   <td className="p-4 font-extrabold text-lg text-green-600 text-right whitespace-nowrap">
+                                    <td className="p-4 font-extrabold text-lg text-green-600 text-right whitespace-nowrap">
                                         ₹{b.total_price.toFixed(2)}
                                     </td>
                                     <td className="p-4 max-w-xs text-xs text-gray-500">{b.address || "Address Not Provided"}</td>
@@ -505,14 +525,23 @@ export default function BookingsPage() {
                                     </td>
 
                                     {/* Payment Status Column */}
-                                    <td className="p-4">
-                                        <span className={`px-3 py-1 text-xs font-bold rounded-full ${getPaymentStatusClasses(b.payment_id)}`}>
-                                            {b.payment_id ? "Paid" : "Not Paid"}
-                                        </span>
+                                    <td className="p-4 text-center">
+                                        {b.payment_id ? (
+                                            <span className={`px-3 py-1 text-xs font-bold rounded-full ${getPaymentStatusClasses(b.payment_id)}`}>
+                                                Paid
+                                            </span>
+                                        ) : (
+                                            <button
+                                                onClick={() => markAsPaid(b.id)}
+                                                className="px-3 py-1 text-xs font-bold rounded-full bg-red-100 text-red-700 border border-red-300 hover:bg-red-200 transition-colors"
+                                            >
+                                                Mark as Paid
+                                            </button>
+                                        )}
                                     </td>
 
                                     {/* Status Dropdown with Controlled Flow */}
-                                    <td className="p-4">
+                                    <td className="p-4 text-center">
                                         <select
                                             value={b.status}
                                             onChange={(e) => handleStatusChange(b.id, e.target.value)}
