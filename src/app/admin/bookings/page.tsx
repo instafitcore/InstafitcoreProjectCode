@@ -53,7 +53,7 @@ const getStatusClasses = (status: string) => {
 };
 
 // Helper function for payment status colors
-const getPaymentStatusClasses = (paymentId: string | null) => {
+const getPaymentStatusClasses = (paymentId: string | null | undefined) => {
     if (paymentId) {
         return "bg-green-100 text-green-700 border border-green-300";
     } else {
@@ -88,7 +88,7 @@ export default function BookingsPage() {
         const dataToExport = filtered.map((b, index) => ({
             "S.No": index + 1,
             "Order No": b.order_no,
-            "Razorpay Order ID": b.razorpay_order_id || "Not Generated",
+            "Razorpay Order ID": b.razorpay_order_id || "On Site Payment",
             "Customer Name": b.customer_name,
             "User ID": b.user_id || "Guest",
             "Service Name": b.service_name,
@@ -120,7 +120,7 @@ export default function BookingsPage() {
         const tableData = filtered.map((b, index) => [
             index + 1,
             b.order_no,
-            b.razorpay_order_id || "Not Generated",
+            b.razorpay_order_id || "On Site Payment",
             b.customer_name,
             b.service_name,
             b.service_types.join(", "),
@@ -481,7 +481,7 @@ export default function BookingsPage() {
                                             <Clock className="w-3 h-3" /> <span className="font-medium">{b.booking_time}</span>
                                         </div>
                                     </td>
-                                    <td className="p-4 font-extrabold text-lg text-green-600 text-right whitespace-nowrap">
+                                                                   <td className="p-4 font-extrabold text-lg text-green-600 text-right whitespace-nowrap">
                                         ₹{b.total_price.toFixed(2)}
                                     </td>
                                     <td className="p-4 max-w-xs text-xs text-gray-500">{b.address || "Address Not Provided"}</td>
