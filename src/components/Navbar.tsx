@@ -121,7 +121,7 @@ export default function FullNavbar() {
   useEffect(() => {
     if (!user) return;
 
-let logoutTimer: ReturnType<typeof setTimeout>;
+    let logoutTimer: ReturnType<typeof setTimeout>;
 
     const resetTimer = () => {
       if (logoutTimer) clearTimeout(logoutTimer);
@@ -278,7 +278,11 @@ let logoutTimer: ReturnType<typeof setTimeout>;
 
   return (
     <>
-      <header className={`bg-white border-b border-gray-200 sticky top-0 z-50 transition-all duration-300 ${isScrolled ? "shadow-lg" : ""}`}>
+      <header className={`
+  bg-white border-b border-gray-200 sticky top-0 z-50 transition-all duration-300 
+  ${isScrolled ? "shadow-lg" : ""} 
+  pt-[env(safe-area-inset-top)] 
+`}>
         <div className="flex max-w-7xl mx-auto px-4 py-4 md:py-5 items-center gap-4 md:gap-6">
           <Link href="/site" className="flex items-center gap-1 shrink-0">
             {/* Logo Icon */}
