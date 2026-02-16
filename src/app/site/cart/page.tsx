@@ -377,122 +377,131 @@ const CartItemCard: React.FC<{
         onUpdateSelectedServices(item.id, newSelections);
     };
 
-    return (
-        <div
-            className="flex flex-col p-4 sm:p-6 bg-white rounded-2xl shadow-xl border-l-4 transition-all duration-300 relative h-full"
-            style={{ borderLeftColor: isServiceMissing ? "#f59e0b" : PRIMARY_COLOR }}
+   return (
+    <div
+        className="flex flex-col p-4 sm:p-6 bg-white rounded-2xl shadow-xl border-l-4 transition-all duration-300 relative h-full"
+        style={{ borderLeftColor: isServiceMissing ? "#f59e0b" : PRIMARY_COLOR }}
+    >
+        {/* Remove Button - Positioned consistently */}
+        <button
+            onClick={() => onRemove(item.id)}
+            disabled={item.isUpdating}
+            className="absolute top-2 right-2 p-2 bg-gray-100 text-gray-500 rounded-full hover:bg-red-50 hover:text-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition z-10"
+            title="Remove Item"
         >
-            <button
-                onClick={() => onRemove(item.id)}
-                disabled={item.isUpdating}
-                className="absolute top-2 right-2 sm:top-4 sm:right-4 p-1 sm:p-2 bg-gray-100 text-gray-500 rounded-full hover:bg-red-50 hover:text-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition z-10"
-                title="Remove Item"
-            >
-                <X className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
+            <X className="w-4 h-4 sm:w-5 sm:h-5" />
+        </button>
 
-            <div className="flex flex-col sm:flex-row items-start w-full min-w-0 pr-8 sm:pr-12">
-                <div className="flex-shrink-0 relative w-20 h-20 sm:w-24 sm:h-24 mr-4 sm:mr-6 border rounded-xl overflow-hidden shadow-md">
-                    {item.service?.image_url ? (
-                        <Image
-                            src={item.service.image_url}
-                            alt={item.service.service_name || "Service Image"}
-                            fill
-                            style={{ objectFit: "cover" }}
-                        />
-                    ) : (
-                        <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400">
-                            <Package className="w-8 h-8 sm:w-10 sm:h-10" />
-                        </div>
-                    )}
-                </div>
-
-                <div className="flex-1 min-w-0 pt-1">
-                    <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 truncate mb-1">
-                        {item.service?.service_name || "Service Not Found"}
-                    </h3>
-
-                    <p className="text-sm font-semibold text-gray-600 mb-2">
-                        Base Price:{" "}
-                        <span className="font-extrabold text-base sm:text-lg" style={{ color: ACCENT_COLOR }}>
-                            ₹{unitPrice.toFixed(2)}
-                        </span>
-                    </p>
-
-                    {availableServices.length > 0 && (
-                        <div className="bg-white p-2 sm:p-3 rounded-lg border border-gray-200 mt-3 shadow-inner">
-                            <p className="text-xs sm:text-sm font-bold text-gray-700 mb-2 flex items-center">
-                                <Info className="w-3 h-3 sm:w-4 sm:h-4 mr-1 text-gray-500" /> Choose Options:
-                            </p>
-                            <div className="flex flex-wrap gap-x-4 sm:gap-x-6 gap-y-2 text-xs sm:text-sm text-gray-600">
-                                {availableServices.map((detail) => (
-                                    <label key={detail.key} className="flex items-center space-x-1 sm:space-x-2 cursor-pointer transition hover:text-gray-800">
-                                        <input
-                                            type="checkbox"
-                                            checked={item.selected_services?.includes(detail.key) || false}
-                                            onChange={(e) => handleServiceToggle(detail.key, e.target.checked)}
-                                            disabled={item.isUpdating || isServiceMissing}
-                                            className="form-checkbox h-3 w-3 sm:h-4 sm:w-4 border-gray-300 rounded focus:ring-0"
-                                            style={{ color: PRIMARY_COLOR, borderColor: PRIMARY_COLOR }}
-                                        />
-                                        <span className="font-medium">{detail.name}</span>
-                                        <span className="text-xs text-gray-500"> (₹{detail.price.toFixed(2)})</span>
-                                    </label>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {item.selected_services?.includes("repair") && (
-                        <div className="mt-2 flex items-start gap-2 text-xs text-gray-500">
-                            <Info className="w-4 h-4 mt-[2px]" />
-                            <span>
-                                Inspection fee only. Repair cost will be quoted after on-site assessment.
-                            </span>
-                        </div>
-                    )}
-                </div>
+        {/* Header Section: Image + Title/Price */}
+        <div className="flex flex-row items-start w-full gap-3 sm:gap-6">
+            {/* Image Container - Fixed size to prevent layout shift */}
+            <div className="flex-shrink-0 relative w-20 h-20 sm:w-24 sm:h-24 border rounded-xl overflow-hidden shadow-sm bg-gray-50">
+                {item.service?.image_url ? (
+                    <Image
+                        src={item.service.image_url}
+                        alt={item.service.service_name || "Service Image"}
+                        fill
+                        style={{ objectFit: "cover" }}
+                    />
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        <Package className="w-8 h-8 sm:w-10 sm:h-10" />
+                    </div>
+                )}
             </div>
 
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full mt-4 sm:mt-6 pt-4 border-t border-gray-100 gap-4">
-                <div className="flex items-center space-x-2 sm:space-x-3">
-                    <span className="text-xs sm:text-sm font-semibold text-gray-700">Quantity:</span>
-                    <div className="flex items-center space-x-1 border border-gray-300 rounded-full p-1 bg-gray-50">
-                        <button
-                            onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
-                            disabled={item.quantity <= 1 || item.isUpdating || !item.service}
-                            className="p-1 text-gray-600 hover:bg-gray-200 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition"
-                        >
-                            <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
-                        </button>
+            {/* Title and Price - Using min-w-0 to allow truncate to work */}
+            <div className="flex-1 min-w-0 pr-8 sm:pr-0">
+                <h3 className="text-base sm:text-xl font-extrabold text-gray-900 leading-tight break-words sm:truncate">
+                    {item.service?.service_name || "Service Not Found"}
+                </h3>
+                <p className="text-xs sm:text-sm font-semibold text-gray-600 mt-1">
+                    Base: <span className="font-extrabold text-sm sm:text-lg" style={{ color: ACCENT_COLOR }}>
+                        ₹{unitPrice.toFixed(2)}
+                    </span>
+                </p>
+            </div>
+        </div>
 
-                        <span className="text-sm sm:text-base font-extrabold w-6 text-center text-gray-900">
-                            {item.isUpdating ? (
-                                <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin mx-auto" style={{ color: PRIMARY_COLOR }} />
-                            ) : (
-                                item.quantity
-                            )}
-                        </span>
-
-                        <button
-                            onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                            disabled={item.isUpdating || !item.service}
-                            className="p-1 text-gray-600 hover:bg-gray-200 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition"
+        {/* Options Section - Improved Grid/Flex for mobile */}
+        {availableServices.length > 0 && (
+            <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 mt-4 shadow-inner">
+                <p className="text-[10px] sm:text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider flex items-center">
+                    <Info className="w-3 h-3 mr-1 text-gray-400" /> Choose Options
+                </p>
+                <div className="grid grid-cols-1 xs:grid-cols-2 gap-2 text-xs sm:text-sm">
+                    {availableServices.map((detail) => (
+                        <label 
+                            key={detail.key} 
+                            className="flex items-center p-1.5 rounded-md hover:bg-white transition cursor-pointer border border-transparent hover:border-gray-200"
                         >
-                            <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-                        </button>
-                    </div>
+                            <input
+                                type="checkbox"
+                                checked={item.selected_services?.includes(detail.key) || false}
+                                onChange={(e) => handleServiceToggle(detail.key, e.target.checked)}
+                                disabled={item.isUpdating || isServiceMissing}
+                                className="form-checkbox h-4 w-4 border-gray-300 rounded focus:ring-0 mr-2"
+                                style={{ color: PRIMARY_COLOR }}
+                            />
+                            <div className="flex flex-col">
+                                <span className="font-bold text-gray-800 leading-none">{detail.name}</span>
+                                <span className="text-[10px] text-gray-500">₹{detail.price.toFixed(2)}</span>
+                            </div>
+                        </label>
+                    ))}
+                </div>
+            </div>
+        )}
+
+        {/* Repair Warning */}
+        {item.selected_services?.includes("repair") && (
+            <div className="mt-2 flex items-start gap-2 text-[10px] sm:text-xs text-amber-600 bg-amber-50 p-2 rounded">
+                <Info className="w-3 h-3 mt-[1px] flex-shrink-0" />
+                <span>Inspection fee only. Final quote provided on-site.</span>
+            </div>
+        )}
+
+        {/* Footer: Quantity and Subtotal */}
+        <div className="mt-auto pt-4 border-t border-gray-100">
+            <div className="flex flex-row items-center justify-between gap-2">
+                {/* Quantity Controller */}
+                <div className="flex items-center bg-gray-100 rounded-full p-1">
+                    <button
+                        onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
+                        disabled={item.quantity <= 1 || item.isUpdating || !item.service}
+                        className="p-1.5 text-gray-600 hover:bg-white hover:shadow-sm rounded-full disabled:opacity-30 transition"
+                    >
+                        <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
+                    </button>
+
+                    <span className="text-sm sm:text-base font-black px-3 min-w-[32px] text-center">
+                        {item.isUpdating ? (
+                            <Loader2 className="w-4 h-4 animate-spin" style={{ color: PRIMARY_COLOR }} />
+                        ) : (
+                            item.quantity
+                        )}
+                    </span>
+
+                    <button
+                        onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                        disabled={item.isUpdating || !item.service}
+                        className="p-1.5 text-gray-600 hover:bg-white hover:shadow-sm rounded-full disabled:opacity-30 transition"
+                    >
+                        <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+                    </button>
                 </div>
 
-                <div className="text-left sm:text-right flex flex-col sm:items-end">
-                    <p className="text-sm sm:text-lg text-gray-500 font-medium">Item Subtotal:</p>
-                    <p className="text-2xl sm:text-3xl font-extrabold" style={{ color: PRIMARY_COLOR }}>
+                {/* Subtotal Display */}
+                <div className="text-right">
+                    <p className="text-[10px] sm:text-xs text-gray-400 font-bold uppercase">Subtotal</p>
+                    <p className="text-xl sm:text-2xl font-black leading-none" style={{ color: PRIMARY_COLOR }}>
                         ₹{subtotal.toFixed(2)}
                     </p>
                 </div>
             </div>
         </div>
-    );
+    </div>
+);
 };
 
 export default function CartPage() {
@@ -1006,7 +1015,7 @@ export default function CartPage() {
 
     return (
         <div className="min-h-screen" style={{ backgroundColor: LIGHT_BG }}>
-            <div className="max-w-6xl mx-auto px-4 py-12 sm:py-16">
+            <div className="max-w-6xl mx-auto px-4 py-2 sm:py-16">
                 {/* HEADER */}
                 <div className="flex items-center bg-white p-4 sm:p-6 lg:p-8 rounded-3xl shadow-2xl mb-6 sm:mb-10 border-t-8" style={{ borderColor: PRIMARY_COLOR }}>
                     <ShoppingCart className={`w-8 h-8 sm:w-10 sm:h-10 mr-4`} style={{ color: PRIMARY_COLOR }} />

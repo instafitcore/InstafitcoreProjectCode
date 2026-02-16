@@ -692,10 +692,11 @@ function ServicesPageContent() {
               <div className="lg:hidden mb-4">
                 <button
                   onClick={() => setShowMobileFilters(true)}
+                  suppressHydrationWarning // Add this line
                   className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 px-4 py-3 rounded-xl shadow-sm"
                 >
-                  <Filter className="w-5 h-5" />
-                  <span className="font-medium text-gray-700">Filters</span>
+                  <Filter className="w-4 h-4" />
+                  Filters
                 </button>
               </div>
 

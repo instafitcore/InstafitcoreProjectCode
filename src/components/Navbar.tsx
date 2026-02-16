@@ -441,7 +441,7 @@ export default function FullNavbar() {
 
         {/* MOBILE OVERLAY */}
         <div className={`fixed inset-0 z-[100] bg-white transition-transform ${mobileOpen ? "translate-x-0" : "translate-x-full"} lg:hidden`}>
-          <div className="p-4 flex justify-between items-center border-b">
+          <div className="p-4 flex justify-between items-center border-b pt-[calc(env(safe-area-inset-top)+1rem)]"> {/* Added padding here */}
             <span className="font-bold text-[#8ed26b]">Menu</span>
             <X className="w-6 h-6 cursor-pointer" onClick={() => setMobileOpen(false)} />
           </div>
@@ -467,17 +467,21 @@ export default function FullNavbar() {
       {/* CATEGORY BAR (Home only) */}
       {pathname?.replace(/\/$/, "") === "/site" && (
         <div
-          className={`sticky top-[72px] z-40 bg-white border-b border-gray-100 shadow-sm transition-all duration-300 overflow-visible ${categoryShrunk ? "py-6" : "py-4"
-            }`}
+          className={`sticky z-40 bg-white border-b border-gray-100 shadow-sm transition-all duration-300 overflow-visible 
+      ${categoryShrunk ? "py-2 top-[72px]" : "py-4 top-[80px] md:top-[90px]"} 
+      pt-[env(safe-area-inset-top)]`}
         >
-
           <div className="max-w-7xl mx-auto px-4 md:px-6">
-            <div className="flex justify-center gap-6 md:gap-16 lg:gap-24 transition-all duration-300
-  overflow-x-auto md:overflow-x-visible
-  scrollbar-hide -mx-4 px-4">
-
+            <div
+              className="flex items-start gap-6 md:gap-16 lg:gap-24 transition-all duration-300
+          overflow-x-auto md:overflow-x-visible md:justify-center
+          scrollbar-hide py-2 px-2"
+            >
               {staticCategories.map((item) => (
-                <div key={item.id} className="relative group flex flex-col items-center">
+                <div
+                  key={item.id}
+                  className="relative group flex flex-col items-center shrink-0"
+                >
                   {/* Category Link */}
                   <Link
                     href={item.link}
@@ -487,7 +491,7 @@ export default function FullNavbar() {
                     <div
                       className={`rounded-full overflow-hidden border border-gray-100 flex items-center justify-center transition-all duration-300 ease-in-out shadow-sm
                   ${categoryShrunk
-                          ? "w-0 h-0 opacity-0 mb-1 scale-0"
+                          ? "w-0 h-0 opacity-0 mb-0 scale-0"
                           : "w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 mb-2 group-hover:scale-105 group-hover:border-[#8ed26b]"
                         }`}
                     >
@@ -500,62 +504,41 @@ export default function FullNavbar() {
                       />
                     </div>
 
-                    <div className="h-[42px] flex flex-col items-center justify-center">
+                    <div className="flex flex-col items-center justify-center">
                       <p
-                        className={`text-center text-[11px] md:text-sm font-semibold text-gray-800
-    whitespace-nowrap overflow-hidden text-ellipsis max-w-[110px] md:max-w-[140px]
-    transition-all duration-300 group-hover:text-[#8ed26b]
-    ${categoryShrunk ? "mt-0" : "mt-1"}`}
+                        className={`text-center text-[11px] md:text-sm font-bold text-gray-800
+                    whitespace-nowrap transition-all duration-300 group-hover:text-[#8ed26b]
+                    ${categoryShrunk ? "mt-0" : "mt-1"}`}
                       >
                         {item.name}
                       </p>
 
-                      <p
-                        className="text-[10px] md:text-xs text-gray-500 font-medium
-    whitespace-nowrap overflow-hidden text-ellipsis max-w-[110px] md:max-w-[140px]"
-                      >
+                      <p className={`text-[10px] md:text-xs text-gray-500 font-medium whitespace-nowrap
+                  ${categoryShrunk ? "hidden" : "block"}`}>
                         {item.subtitle}
                       </p>
                     </div>
-
                   </Link>
 
-
-                  {/* Hover Dropdown for Sub Services */}
+                  {/* Hover Dropdown (same as your original) */}
                   {item.subServices && item.subServices.length > 0 && (
                     <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 w-64 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto scale-95 group-hover:scale-100 transform transition-all duration-300 z-50 hidden md:block">
-                      {/* The white box container */}
                       <div className="bg-white border border-gray-200 rounded-xl shadow-2xl overflow-hidden">
                         <div className="px-4 py-3">
-                          <ul className="text-gray-700 text-sm space-y-2">
-                            {item.subServices.map((sub, idx) => {
-                              let href = item.link; // fallback
-
-                              if (item.id === "furniture-service") {
-                                if (sub === "Furniture Installation") href = "/site/services?typeId=1";
-                                if (sub === "Furniture Dismantling") href = "/site/services?typeId=2";
-                                if (sub === "Furniture Repair") href = "/site/services?typeId=3";
-                              }
-
-                              return (
-                                <li key={idx}>
-                                  <Link
-                                    href={href}
-                                    className="hover:text-[#8ed26b] transition-colors flex items-start gap-2"
-                                  >
-                                    <span className="text-[#8ed26b]">•</span>
-                                    <span>{sub}</span>
-                                  </Link>
-                                </li>
-                              );
-                            })}
-
+                          <ul className="text-gray-700 text-sm space-y-2 text-left">
+                            {item.subServices.map((sub, idx) => (
+                              <li key={idx}>
+                                <Link href={item.link} className="hover:text-[#8ed26b] transition-colors flex items-start gap-2">
+                                  <span className="text-[#8ed26b]">•</span>
+                                  <span>{sub}</span>
+                                </Link>
+                              </li>
+                            ))}
                           </ul>
                         </div>
                       </div>
                     </div>
                   )}
-
                 </div>
               ))}
             </div>
