@@ -139,7 +139,7 @@ export default function AboutPage() {
           </a>
 
           <a
-            href="/site/services"
+            href="/site/contact"
             className="inline-flex items-center justify-center px-8 py-4 border-2 border-instafitcore-green text-instafitcore-green font-semibold rounded-full shadow-md hover:bg-instafitcore-green hover:text-white hover:scale-105 transition-transform duration-300"
           >
             Get a Free Quote

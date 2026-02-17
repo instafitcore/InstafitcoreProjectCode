@@ -112,7 +112,6 @@ function ServicesPageContent() {
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   // Booking Modal State
   const [modalOpen, setModalOpen] = useState(false);
@@ -135,13 +134,35 @@ function ServicesPageContent() {
   );
 
   // Filters & Search
-  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
-    null
-  );
+  const [selectedFilters, setSelectedFilters] = useState<
+    { category: string; subcategory: string | null }[]
+  >([]);
+
   const [activePriceFilter, setActivePriceFilter] = useState<string | null>(
     null
   );
   const [searchText, setSearchText] = useState("");
+  const addFilter = (category: string, subcategory: string | null) => {
+    setSelectedFilters((prev) => {
+      const exists = prev.some(
+        (f) => f.category === category && f.subcategory === subcategory
+      );
+
+      if (exists) return prev; // don't duplicate
+
+      return [...prev, { category, subcategory }];
+    });
+  };
+
+  const removeFilter = (category: string, subcategory: string | null) => {
+    setSelectedFilters((prev) =>
+      prev.filter((f) => !(f.category === category && f.subcategory === subcategory))
+    );
+  };
+
+  const clearAllFilters = () => {
+    setSelectedFilters([]);
+  };
 
   // Auth + persisted states
   const [userId, setUserId] = useState<string | null>(null);
@@ -203,15 +224,15 @@ function ServicesPageContent() {
     const categoryParam = searchParams.get("category");
     const subcategoryParam = searchParams.get("subcategory");
 
-    if (subcategoryParam) {
-      setSelectedSubcategory(subcategoryParam);
-      if (categoryParam) setSelectedCategory(categoryParam);
-      setSelectedTopLevel("Furniture Service"); // Expand furniture section
+    if (categoryParam && subcategoryParam) {
+      addFilter(categoryParam, subcategoryParam);
+      setSelectedTopLevel("Furniture Service");
     } else if (categoryParam) {
-      setSelectedCategory(categoryParam);
+      addFilter(categoryParam, null);
       setSelectedTopLevel("Furniture Service");
     }
   }, [searchParams]);
+
 
   // Add this new useEffect to handle the topLevel query param
   useEffect(() => {
@@ -458,37 +479,43 @@ function ServicesPageContent() {
   // --- Filtered Services ---
   const filteredServices = useMemo(() => {
     let list = [...services];
-    if (selectedCategory)
-      list = list.filter((s) => s.category === selectedCategory);
 
-    if (selectedSubcategory)
-      list = list.filter((s) => s.subcategory === selectedSubcategory);
+    // MULTI FILTER SUPPORT
+    if (selectedFilters.length > 0) {
+      list = list.filter((s) =>
+        selectedFilters.some((f) => {
+          if (f.subcategory) {
+            return s.category === f.category && s.subcategory === f.subcategory;
+          }
+          return s.category === f.category;
+        })
+      );
+    }
 
     if (activePriceFilter === "install")
       list = list.filter((s) => s.installation_price && s.installation_price > 0);
+
     if (activePriceFilter === "dismantle")
       list = list.filter((s) => s.dismantling_price && s.dismantling_price > 0);
+
     if (activePriceFilter === "repair")
       list = list.filter((s) => s.repair_price && s.repair_price > 0);
+
     if (searchText)
       list = list.filter((s) =>
         s.service_name.toLowerCase().includes(searchText.toLowerCase())
       );
+
     return list;
-  }, [
-    services,
-    selectedCategory,      // 👈 ADD
-    selectedSubcategory,
-    activePriceFilter,
-    searchText
-  ]);
+  }, [services, selectedFilters, activePriceFilter, searchText]);
+
 
   const [previousState, setPreviousState] = useState<{
     topLevel: string | null;
-    category: string | null;
-    subcategory: string | null;
+    selectedFilters: { category: string; subcategory: string | null }[];
     expandedCategoryId: number | null;
   } | null>(null);
+
 
   const handleBookClick = (service: ServiceItem) => {
     if (authLoading) return; // still loading, do nothing
@@ -527,10 +554,9 @@ function ServicesPageContent() {
             type="button"
             onClick={() => {
               setSelectedTopLevel(previousState.topLevel);
-              setSelectedCategory(previousState.category);
-              setSelectedSubcategory(previousState.subcategory);
+              setSelectedFilters(previousState.selectedFilters);
               setExpandedCategoryId(previousState.expandedCategoryId);
-              setPreviousState(null);
+
             }}
             className="px-4 py-2 rounded-xl font-semibold 
                  bg-instafitcore-green text-white hover:bg-instafitcore-green-hover
@@ -562,21 +588,22 @@ function ServicesPageContent() {
                       if (item === "Furniture Service") {
                         setSelectedTopLevel(isActive ? null : item);
                         setExpandedCategoryId(null);
-                        setSelectedSubcategory(null);
+                        clearAllFilters();
                         return;
                       }
+
 
                       // Other items → set selectedTopLevel
                       setPreviousState({
                         topLevel: selectedTopLevel,
-                        category: selectedCategory,
-                        subcategory: selectedSubcategory,
+                        selectedFilters,
                         expandedCategoryId,
                       });
 
+
                       setSelectedTopLevel(item);
-                      setSelectedCategory(null);
-                      setSelectedSubcategory(null);
+                      clearAllFilters();
+                      clearAllFilters();
                       setExpandedCategoryId(null);
                     }}
                     className={`w-full text-left px-4 py-3 rounded-xl font-semibold flex justify-between items-center transition-all min-h-[44px] ${isActive
@@ -599,11 +626,12 @@ function ServicesPageContent() {
                     <div className="mt-2 ml-2 space-y-1">
                       {/* All Furniture Services */}
                       <button
-                        onClick={() => setSelectedSubcategory(null)}
-                        className={`w-full text-left px-4 py-2 rounded-lg text-sm transition-all ${selectedSubcategory === null
+                        onClick={() => clearAllFilters()}
+                        className={`w-full text-left px-4 py-2 rounded-lg text-sm transition-all ${selectedFilters.length === 0
                           ? "bg-instafitcore-green/20 text-instafitcore-green font-semibold"
                           : "hover:bg-gray-100 text-gray-700"
                           }`}
+
                       >
                         All Furniture Services
                       </button>
@@ -617,9 +645,15 @@ function ServicesPageContent() {
                             <button
                               onClick={() => {
                                 setExpandedCategoryId(isExpanded ? null : cat.id);
-                                setSelectedCategory(cat.name);   // 👈 IMPORTANT
-                                setSelectedSubcategory(null);    // reset subcategory
+
+                                const exists = selectedFilters.some(
+                                  (f) => f.category === cat.name && f.subcategory === null
+                                );
+
+                                setExpandedCategoryId(isExpanded ? null : cat.id);
+
                               }}
+
 
                               className={`w-full text-left px-3 py-2 rounded-lg text-sm font-semibold flex justify-between items-center transition-all ${isExpanded
                                 ? "bg-instafitcore-green/20 text-instafitcore-green"
@@ -643,10 +677,10 @@ function ServicesPageContent() {
                               subcategoriesMap[cat.id]?.map((sub) => (
                                 <button
                                   key={sub.id}
-                                  onClick={() =>
-                                    setSelectedSubcategory(sub.subcategory)
-                                  }
-                                  className={`w-full text-left ml-4 px-4 py-2 mt-1 rounded-lg text-sm transition-all ${selectedSubcategory === sub.subcategory
+                                  onClick={() => addFilter(cat.name, sub.subcategory)}
+                                  className={`w-full text-left ml-4 px-4 py-2 mt-1 rounded-lg text-sm transition-all ${selectedFilters.some(
+                                    (f) => f.category === cat.name && f.subcategory === sub.subcategory
+                                  )
                                     ? "bg-instafitcore-green text-white shadow-md"
                                     : "text-gray-700 hover:bg-instafitcore-green/10"
                                     }`}
@@ -740,6 +774,39 @@ function ServicesPageContent() {
                   />
                 </div>
               </div>
+
+              {selectedFilters.some((f) => f.subcategory !== null) && (
+                <div className="mb-6 flex flex-wrap gap-2">
+                  {selectedFilters
+                    .filter((f) => f.subcategory !== null) // only subcategory filters
+                    .map((f, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center gap-2 bg-instafitcore-green/10 text-instafitcore-green px-4 py-2 rounded-full text-sm font-semibold shadow-sm"
+                      >
+                        <span>
+                          {f.category} {" > "} {f.subcategory}
+                        </span>
+
+                        <button
+                          onClick={() => removeFilter(f.category, f.subcategory)}
+                          className="hover:text-red-600"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+
+
+                  <button
+                    onClick={clearAllFilters}
+                    className="px-4 py-2 rounded-full bg-red-100 text-red-600 font-semibold text-sm hover:bg-red-200"
+                  >
+                    Clear All
+                  </button>
+                </div>
+              )}
+
 
               {/* SERVICES GRID */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-7">
@@ -922,18 +989,20 @@ function ServicesPageContent() {
                         if (item === "Furniture Service") {
                           setSelectedTopLevel(isActive ? null : item);
                           setExpandedCategoryId(null);
-                          setSelectedSubcategory(null);
-                        } else {
+                          clearAllFilters();
+                          return;
+                        }
+                        else {
                           setPreviousState({
                             topLevel: selectedTopLevel,
-                            category: selectedCategory,
-                            subcategory: selectedSubcategory,
+                            selectedFilters,
                             expandedCategoryId,
                           });
 
+
                           setSelectedTopLevel(item);
-                          setSelectedCategory(null);
-                          setSelectedSubcategory(null);
+                          clearAllFilters();
+                          clearAllFilters();
                           setExpandedCategoryId(null);
                         }
                         setShowMobileMenu(false); // Close modal
@@ -958,11 +1027,10 @@ function ServicesPageContent() {
                       <div className="mt-2 ml-2 space-y-1">
                         <button
                           onClick={() => {
-                            setSelectedSubcategory(null);
+                            clearAllFilters();
                             setShowMobileMenu(false);
                           }}
-                          className={`w-full text-left px-4 py-2 rounded-lg text-sm transition-all ${selectedSubcategory === null
-                            ? "bg-instafitcore-green/20 text-instafitcore-green font-semibold"
+                          className={`w-full text-left px-4 py-2 rounded-lg text-sm transition-all ${selectedFilters.length === 0 ? "bg-instafitcore-green/20 text-instafitcore-green font-semibold"
                             : "hover:bg-gray-100 text-gray-700"
                             }`}
                         >
@@ -975,9 +1043,15 @@ function ServicesPageContent() {
                               <button
                                 onClick={() => {
                                   setExpandedCategoryId(isExpanded ? null : cat.id);
-                                  setSelectedCategory(cat.name);   // 👈 IMPORTANT
-                                  setSelectedSubcategory(null);    // reset subcategory
+
+                                  const exists = selectedFilters.some(
+                                    (f) => f.category === cat.name && f.subcategory === null
+                                  );
+
+                                  setExpandedCategoryId(isExpanded ? null : cat.id);
+
                                 }}
+
 
                                 className={`w-full text-left px-3 py-2 rounded-lg text-sm font-semibold flex justify-between items-center transition-all ${isExpanded
                                   ? "bg-instafitcore-green/20 text-instafitcore-green"
@@ -998,10 +1072,12 @@ function ServicesPageContent() {
                                   <button
                                     key={sub.id}
                                     onClick={() => {
-                                      setSelectedSubcategory(sub.subcategory);
+                                      addFilter(cat.name, sub.subcategory);
                                       setShowMobileMenu(false);
                                     }}
-                                    className={`w-full text-left ml-4 px-4 py-2 mt-1 rounded-lg text-sm transition-all ${selectedSubcategory === sub.subcategory
+                                    className={`w-full text-left ml-4 px-4 py-2 mt-1 rounded-lg text-sm transition-all ${selectedFilters.some(
+                                      (f) => f.category === cat.name && f.subcategory === sub.subcategory
+                                    )
                                       ? "bg-instafitcore-green text-white shadow-md"
                                       : "text-gray-700 hover:bg-instafitcore-green/10"
                                       }`}
@@ -1058,9 +1134,9 @@ function ServicesPageContent() {
                   <button
                     onClick={() => {
                       setSelectedTopLevel(null);
-                      setSelectedSubcategory(null);
+                      clearAllFilters();
                     }}
-                    className={`w-full text-left px-4 py-2 rounded-xl font-medium border-2 transition-all ${selectedTopLevel === null && selectedSubcategory === null
+                    className={`w-full text-left px-4 py-2 rounded-xl font-medium border-2 transition-all ${selectedTopLevel === null && selectedFilters.length === 0
                       ? "bg-instafitcore-green text-white border-instafitcore-green"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-transparent"
                       }`}
@@ -1082,20 +1158,22 @@ function ServicesPageContent() {
                           if (item === "Furniture Service") {
                             setSelectedTopLevel(isActive ? null : item);
                             setExpandedCategoryId(null);
-                            setSelectedSubcategory(null);
-                          } else {
+                            clearAllFilters();
+                            return;
+                          }
+                          else {
                             setPreviousState({
                               topLevel: selectedTopLevel,
-                              category: selectedCategory,
-                              subcategory: selectedSubcategory,
+                              selectedFilters,
                               expandedCategoryId,
                             });
 
+
                             setSelectedTopLevel(item);
-                            setSelectedCategory(null);
-                            setSelectedSubcategory(null);
+                            clearAllFilters();
+                            clearAllFilters();
                             setExpandedCategoryId(null);
-                            setSelectedSubcategory(null);
+                            clearAllFilters();
                           }
                         }}
                         className={`w-full text-left px-4 py-2 rounded-xl font-medium flex justify-between items-center transition-all ${isActive
@@ -1118,9 +1196,8 @@ function ServicesPageContent() {
                         <div className="mt-2 ml-4 space-y-1">
                           {/* All Furniture Services */}
                           <button
-                            onClick={() => setSelectedSubcategory(null)}
-                            className={`w-full text-left px-4 py-2 rounded-lg text-sm transition-all ${selectedSubcategory === null
-                              ? "bg-instafitcore-green/20 text-instafitcore-green font-semibold"
+                            onClick={() => addFilter(cat.name, sub.subcategory)}
+                            className={`w-full text-left px-4 py-2 rounded-lg text-sm transition-all ${selectedFilters.length === 0 ? "bg-instafitcore-green/20 text-instafitcore-green font-semibold"
                               : "hover:bg-gray-100 text-gray-700"
                               }`}
                           >
@@ -1136,9 +1213,15 @@ function ServicesPageContent() {
                                 <button
                                   onClick={() => {
                                     setExpandedCategoryId(isExpanded ? null : cat.id);
-                                    setSelectedCategory(cat.name);   // 👈 IMPORTANT
-                                    setSelectedSubcategory(null);    // reset subcategory
+
+                                    const exists = selectedFilters.some(
+                                      (f) => f.category === cat.name && f.subcategory === null
+                                    );
+
+                                    setExpandedCategoryId(isExpanded ? null : cat.id);
+
                                   }}
+
 
                                   className={`w-full text-left px-3 py-2 rounded-lg text-sm font-semibold flex justify-between items-center transition-all ${isExpanded
                                     ? "bg-instafitcore-green/20 text-instafitcore-green"
@@ -1156,24 +1239,29 @@ function ServicesPageContent() {
                                 </button>
 
                                 {/* Subcategories */}
-                                {isExpanded &&
+                                {
+                                  isExpanded &&
                                   subcategoriesMap[cat.id]?.map((sub) => (
                                     <button
                                       key={sub.id}
-                                      onClick={() => setSelectedSubcategory(sub.subcategory)}
-                                      className={`w-full text-left ml-4 px-4 py-2 mt-1 rounded-lg text-sm transition-all ${selectedSubcategory === sub.subcategory
+                                      onClick={() => addFilter(cat.name, sub.subcategory)}
+                                      className={`w-full text-left ml-4 px-4 py-2 mt-1 rounded-lg text-sm transition-all ${selectedFilters.some(
+                                        (f) => f.category === cat.name && f.subcategory === sub.subcategory
+                                      )
                                         ? "bg-instafitcore-green text-white shadow-md"
                                         : "text-gray-700 hover:bg-instafitcore-green/10"
                                         }`}
                                     >
                                       {sub.subcategory}
                                     </button>
-                                  ))}
+                                  ))
+                                }
                               </div>
                             );
                           })}
                         </div>
-                      )}
+                      )
+                      }
                     </li>
                   );
                 })}
@@ -1223,211 +1311,220 @@ function ServicesPageContent() {
             </button>
           </div>
         </div>
-      )}
+      )
+      }
 
       {/* CART SELECTION MODAL */}
-      {isCartModalOpen && selectedServiceForCart && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 w-11/12 max-w-lg max-h-[80vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold flex items-center gap-2">
-                <ShoppingCart className="w-6 h-6 text-gray-600" />
-                Select Services for {selectedServiceForCart.service_name}
-              </h3>
-              <button
-                onClick={() => setIsCartModalOpen(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
+      {
+        isCartModalOpen && selectedServiceForCart && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl p-6 w-11/12 max-w-lg max-h-[80vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold flex items-center gap-2">
+                  <ShoppingCart className="w-6 h-6 text-gray-600" />
+                  Select Services for {selectedServiceForCart.service_name}
+                </h3>
+                <button
+                  onClick={() => setIsCartModalOpen(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
 
-            <p className="mb-4 text-gray-600">
-              Choose the type(s) of service you need for this item.
-            </p>
+              <p className="mb-4 text-gray-600">
+                Choose the type(s) of service you need for this item.
+              </p>
 
-            <div className="space-y-4">
-              {/* Installation */}
-              {formatPrice(selectedServiceForCart.installation_price) && (
-                <label className="flex items-center space-x-3 p-4 border rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
-                  <input
-                    type="checkbox"
-                    className={`w-5 h-5 text-instafitcore-green rounded focus:ring-instafitcore-green`}
-                    checked={selectedServiceTypes.includes("installation")}
-                    onChange={() => {
-                      setSelectedServiceTypes((prev) =>
-                        prev.includes("installation")
-                          ? prev.filter((t) => t !== "installation")
-                          : [...prev, "installation"]
-                      );
-                    }}
-                  />
-                  <span className="font-medium text-lg flex-grow">
-                    Installation
-                  </span>
-                  <span className="text-green-600 font-bold text-lg">
-                    {formatPrice(selectedServiceForCart.installation_price)}
-                  </span>
-                </label>
-              )}
-
-              {/* Dismantling */}
-              {formatPrice(selectedServiceForCart.dismantling_price) && (
-                <label className="flex items-center space-x-3 p-4 border rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
-                  <input
-                    type="checkbox"
-                    className={`w-5 h-5 text-instafitcore-green rounded focus:ring-instafitcore-green`}
-                    checked={selectedServiceTypes.includes("dismantling")}
-                    onChange={() => {
-                      setSelectedServiceTypes((prev) =>
-                        prev.includes("dismantling")
-                          ? prev.filter((t) => t !== "dismantling")
-                          : [...prev, "dismantling"]
-                      );
-                    }}
-                  />
-                  <span className="font-medium text-lg flex-grow">
-                    Dismantling
-                  </span>
-                  <span className="text-green-600 font-bold text-lg">
-                    {formatPrice(selectedServiceForCart.dismantling_price)}
-                  </span>
-                </label>
-              )}
-              {/* Repair */}
-              {formatPrice(selectedServiceForCart.repair_price) && (
-                <div className="space-y-2">
+              <div className="space-y-4">
+                {/* Installation */}
+                {formatPrice(selectedServiceForCart.installation_price) && (
                   <label className="flex items-center space-x-3 p-4 border rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
                     <input
                       type="checkbox"
-                      className="w-5 h-5 text-instafitcore-green rounded focus:ring-instafitcore-green"
-                      checked={selectedServiceTypes.includes("repair")}
+                      className={`w-5 h-5 text-instafitcore-green rounded focus:ring-instafitcore-green`}
+                      checked={selectedServiceTypes.includes("installation")}
                       onChange={() => {
                         setSelectedServiceTypes((prev) =>
-                          prev.includes("repair")
-                            ? prev.filter((t) => t !== "repair")
-                            : [...prev, "repair"]
+                          prev.includes("installation")
+                            ? prev.filter((t) => t !== "installation")
+                            : [...prev, "installation"]
                         );
                       }}
                     />
-                    <span className="font-medium text-lg flex-grow">Repair</span>
+                    <span className="font-medium text-lg flex-grow">
+                      Installation
+                    </span>
                     <span className="text-green-600 font-bold text-lg">
-                      {formatPrice(selectedServiceForCart.repair_price)}
+                      {formatPrice(selectedServiceForCart.installation_price)}
                     </span>
                   </label>
+                )}
 
-                  {/* 👇 Inspection Note (ONLY when repair selected) */}
-                  {selectedServiceTypes.includes("repair") && (
-                    <p className="text-xs text-gray-500 pl-2">
-                      Inspection fee only. Repair cost will be quoted after on-site assessment.
-                    </p>
-                  )}
-                </div>
-              )}
+                {/* Dismantling */}
+                {formatPrice(selectedServiceForCart.dismantling_price) && (
+                  <label className="flex items-center space-x-3 p-4 border rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
+                    <input
+                      type="checkbox"
+                      className={`w-5 h-5 text-instafitcore-green rounded focus:ring-instafitcore-green`}
+                      checked={selectedServiceTypes.includes("dismantling")}
+                      onChange={() => {
+                        setSelectedServiceTypes((prev) =>
+                          prev.includes("dismantling")
+                            ? prev.filter((t) => t !== "dismantling")
+                            : [...prev, "dismantling"]
+                        );
+                      }}
+                    />
+                    <span className="font-medium text-lg flex-grow">
+                      Dismantling
+                    </span>
+                    <span className="text-green-600 font-bold text-lg">
+                      {formatPrice(selectedServiceForCart.dismantling_price)}
+                    </span>
+                  </label>
+                )}
+                {/* Repair */}
+                {formatPrice(selectedServiceForCart.repair_price) && (
+                  <div className="space-y-2">
+                    <label className="flex items-center space-x-3 p-4 border rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
+                      <input
+                        type="checkbox"
+                        className="w-5 h-5 text-instafitcore-green rounded focus:ring-instafitcore-green"
+                        checked={selectedServiceTypes.includes("repair")}
+                        onChange={() => {
+                          setSelectedServiceTypes((prev) =>
+                            prev.includes("repair")
+                              ? prev.filter((t) => t !== "repair")
+                              : [...prev, "repair"]
+                          );
+                        }}
+                      />
+                      <span className="font-medium text-lg flex-grow">Repair</span>
+                      <span className="text-green-600 font-bold text-lg">
+                        {formatPrice(selectedServiceForCart.repair_price)}
+                      </span>
+                    </label>
 
-            </div>
-
-            <button
-              onClick={() =>
-                confirmAddToCart(selectedServiceForCart, selectedServiceTypes)
-              }
-              disabled={selectedServiceTypes.length === 0}
-              className={`w-full mt-6 p-4 rounded-xl text-white font-semibold flex items-center justify-center shadow-md transition-all ${selectedServiceTypes.length > 0
-                ? `bg-instafitcore-green hover:bg-instafitcore-green-hover`
-                : "bg-gray-400 opacity-70 cursor-not-allowed"
-                }`}
-            >
-              Add to Cart ({selectedServiceTypes.length} Service{selectedServiceTypes.length !== 1 ? 's' : ''})
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* REVIEWS MODAL */}
-      {isReviewsModalOpen && selectedServiceForReviews && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 w-11/12 max-w-2xl max-h-[80vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold">Reviews for {selectedServiceForReviews.service_name}</h3>
-              <button
-                onClick={() => setIsReviewsModalOpen(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            {reviewsForService.length === 0 ? (
-              <p className="text-gray-600">No reviews available.</p>
-            ) : (
-              <div className="space-y-4">
-                {reviewsForService.map(review => (
-                  <div key={review.id} className="border-b pb-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      {renderStars(review.rating)}
-                      <span className="text-sm text-gray-600">({review.rating})</span>
-                    </div>
-                    <p className="text-sm font-semibold">Employee: {review.employee_name}</p>
-                    <p className="text-sm text-gray-700">{review.service_details || "No details provided."}</p>
-                    <p className="text-xs text-gray-500">Reviewed on {new Date(review.created_at).toLocaleDateString()}</p>
-                    {review.images && review.images.length > 0 && (
-                      <div className="flex gap-2 mt-2">
-                        {review.images.map((img, idx) => (
-                          <img key={idx} src={img} alt="Review image" className="w-16 h-16 object-cover rounded" />
-                        ))}
-                      </div>
+                    {/* 👇 Inspection Note (ONLY when repair selected) */}
+                    {selectedServiceTypes.includes("repair") && (
+                      <p className="text-xs text-gray-500 pl-2">
+                        Inspection fee only. Repair cost will be quoted after on-site assessment.
+                      </p>
                     )}
                   </div>
-                ))}
+                )}
+
               </div>
-            )}
-          </div>
-        </div>
-      )}
 
-      {/* BOOKING MODAL */}
-      {selectedService && (
-        <BookServiceModal
-          service={selectedService}
-          isOpen={modalOpen}
-          onClose={() => setModalOpen(false)}
-          userEmail={userEmail || ''}
-          isLoading={isBookingLoading}  // Add this line
-        />
-      )}
-
-      {/* LOGIN PROMPT MODAL */}
-      {loginPromptOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-3xl p-8 w-11/12 max-w-md shadow-2xl animate-fadeIn">
-            {/* Icon */}
-            <div className="flex justify-center mb-4">
-              <LogIn className="w-16 h-16 text-instafitcore-green" />
-            </div>
-
-            {/* Heading */}
-            <h3 className="text-2xl font-extrabold text-center text-gray-800 mb-2">
-              Login Required
-            </h3>
-
-            {/* Updated Description */}
-            <p className="text-center text-gray-600 mb-6">
-              To book this service, please log in or sign up to your InstaFitCore account.
-            </p>
-
-            {/* Buttons */}
-            <div className="flex justify-center gap-4">
               <button
-                onClick={() => setLoginPromptOpen(false)}
-                className="px-6 py-2 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-100 transition"
+                onClick={() =>
+                  confirmAddToCart(selectedServiceForCart, selectedServiceTypes)
+                }
+                disabled={selectedServiceTypes.length === 0}
+                className={`w-full mt-6 p-4 rounded-xl text-white font-semibold flex items-center justify-center shadow-md transition-all ${selectedServiceTypes.length > 0
+                  ? `bg-instafitcore-green hover:bg-instafitcore-green-hover`
+                  : "bg-gray-400 opacity-70 cursor-not-allowed"
+                  }`}
               >
-                Cancel
+                Add to Cart ({selectedServiceTypes.length} Service{selectedServiceTypes.length !== 1 ? 's' : ''})
               </button>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+
+      {/* REVIEWS MODAL */}
+      {
+        isReviewsModalOpen && selectedServiceForReviews && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl p-6 w-11/12 max-w-2xl max-h-[80vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold">Reviews for {selectedServiceForReviews.service_name}</h3>
+                <button
+                  onClick={() => setIsReviewsModalOpen(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {reviewsForService.length === 0 ? (
+                <p className="text-gray-600">No reviews available.</p>
+              ) : (
+                <div className="space-y-4">
+                  {reviewsForService.map(review => (
+                    <div key={review.id} className="border-b pb-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        {renderStars(review.rating)}
+                        <span className="text-sm text-gray-600">({review.rating})</span>
+                      </div>
+                      <p className="text-sm font-semibold">Employee: {review.employee_name}</p>
+                      <p className="text-sm text-gray-700">{review.service_details || "No details provided."}</p>
+                      <p className="text-xs text-gray-500">Reviewed on {new Date(review.created_at).toLocaleDateString()}</p>
+                      {review.images && review.images.length > 0 && (
+                        <div className="flex gap-2 mt-2">
+                          {review.images.map((img, idx) => (
+                            <img key={idx} src={img} alt="Review image" className="w-16 h-16 object-cover rounded" />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      }
+
+      {/* BOOKING MODAL */}
+      {
+        selectedService && (
+          <BookServiceModal
+            service={selectedService}
+            isOpen={modalOpen}
+            onClose={() => setModalOpen(false)}
+            userEmail={userEmail || ''}
+            isLoading={isBookingLoading}  // Add this line
+          />
+        )
+      }
+
+      {/* LOGIN PROMPT MODAL */}
+      {
+        loginPromptOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-3xl p-8 w-11/12 max-w-md shadow-2xl animate-fadeIn">
+              {/* Icon */}
+              <div className="flex justify-center mb-4">
+                <LogIn className="w-16 h-16 text-instafitcore-green" />
+              </div>
+
+              {/* Heading */}
+              <h3 className="text-2xl font-extrabold text-center text-gray-800 mb-2">
+                Login Required
+              </h3>
+
+              {/* Updated Description */}
+              <p className="text-center text-gray-600 mb-6">
+                To book this service, please log in or sign up to your InstaFitCore account.
+              </p>
+
+              {/* Buttons */}
+              <div className="flex justify-center gap-4">
+                <button
+                  onClick={() => setLoginPromptOpen(false)}
+                  className="px-6 py-2 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-100 transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      }
+    </div >
   );
 }
 
