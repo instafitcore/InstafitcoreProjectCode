@@ -1168,14 +1168,8 @@ function ServicesPageContent() {
                             return;
                           }
                           else {
-                            setPreviousState({
-                              topLevel: selectedTopLevel,
-                              selectedFilters,
-                              expandedCategoryId,
-                            });
+                            
                             pushToHistory();
-
-
                             setSelectedTopLevel(item);
                             setExpandedCategoryId(null);
                             clearAllFilters();
