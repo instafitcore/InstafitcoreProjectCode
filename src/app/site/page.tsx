@@ -252,7 +252,6 @@ const HeroCarousel: React.FC<{ slides: Slide[] }> = ({ slides }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const slideTimer = useRef<number | null>(null);
 
-  // Function to start the auto-slide timer
   const startTimer = useCallback(() => {
     if (slideTimer.current) clearInterval(slideTimer.current);
     slideTimer.current = window.setInterval(() => {
@@ -260,31 +259,23 @@ const HeroCarousel: React.FC<{ slides: Slide[] }> = ({ slides }) => {
     }, 5000);
   }, [slides.length]);
 
-  // Effect to start timer on mount and clean up on unmount
   useEffect(() => {
     startTimer();
-    return () => {
-      if (slideTimer.current) clearInterval(slideTimer.current);
-    };
+    return () => { if (slideTimer.current) clearInterval(slideTimer.current); };
   }, [startTimer]);
 
-  // Function to go to a specific slide and reset timer
   const goToSlide = (i: number) => {
-    startTimer(); // Reset timer on manual navigation
+    startTimer();
     setCurrentSlide(i);
   };
 
-  // Function to navigate to next or previous slide
   const navigate = (direction: -1 | 1) => {
     const nextIndex = (currentSlide + direction + slides.length) % slides.length;
     goToSlide(nextIndex);
   };
 
   return (
-    <section
-      className="relative w-full h-[400px] sm:h-[500px] lg:h-[600px] overflow-hidden" // Improved height for mobile
-      aria-live="polite"
-    >
+    <section className="relative w-full h-[450px] sm:h-[300px] lg:h-[650px] overflow-hidden bg-black" aria-live="polite">
       {slides.map((slide, i) => (
         <div
           key={slide.id}
@@ -294,16 +285,18 @@ const HeroCarousel: React.FC<{ slides: Slide[] }> = ({ slides }) => {
         >
           <Image
             src={slide.img}
-            alt={`Hero slide: ${slide.title}`}
+            alt={slide.title}
             fill
             className="object-cover"
             priority={i === 0}
             sizes="100vw"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent"></div>
+          {/* Enhanced gradient for text readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent md:bg-gradient-to-r md:from-black/70 md:to-transparent"></div>
 
-          <div className="absolute z-20 left-6 md:left-20 top-1/2 -translate-y-1/2 max-w-lg text-left"> {/* Added text-left for better mobile stacking */}
-            {/* MAIN HEADER (same for all banners) */}
+          {/* TEXT CONTENT - Padded to avoid arrows */}
+          <div className="absolute z-20 left-6 right-6 md:left-20 top-1/2 -translate-y-1/2 max-w-2xl">
+            {/* The Bolded Main Header */}
             <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold uppercase tracking-wider text-instafitcore-green mb-4">
               {slide.mainHeader}
             </h2>
@@ -317,53 +310,55 @@ const HeroCarousel: React.FC<{ slides: Slide[] }> = ({ slides }) => {
             <p className="text-md sm:text-lg md:text-xl text-white/90 drop-shadow-lg mb-4 sm:mb-6">
               {slide.subtitle}
             </p>
+
             <Link
               href={slide.cta.href}
-              className="inline-block px-8 py-3 sm:px-10 sm:py-4 text-white font-semibold text-sm sm:text-base rounded-full shadow-xl transition-all duration-300 hover:scale-[1.03] bg-instafitcore-green hover:bg-instafitcore-green-hover"
+              className="inline-block px-8 py-3.5 md:px-10 md:py-4 bg-instafitcore-green text-white font-bold rounded-full hover:scale-105 transition-transform shadow-lg"
             >
               {slide.cta.text}
             </Link>
-
           </div>
         </div>
       ))}
 
-      {/* Slide Indicators */}
-      <div className="absolute bottom-4 sm:bottom-8 left-1/2 -translate-x-1/2 flex gap-3 z-40">
-        {slides.map((_, i) => (
+      {/* BOTTOM CONTROL BAR (Arrows + Indicators) */}
+      <div className="absolute bottom-6 left-6 right-6 md:left-20 md:right-20 flex items-center justify-between z-40">
+
+        {/* Indicators (Left Side) */}
+        <div className="flex gap-2">
+          {slides.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => goToSlide(i)}
+              className={`h-1.5 transition-all duration-300 rounded-full ${currentSlide === i ? "w-8 bg-instafitcore-green" : "w-2 bg-white/40"
+                }`}
+              aria-label={`Slide ${i + 1}`}
+            />
+          ))}
+        </div>
+
+        {/* Navigation Arrows Grouped (Right Side) */}
+        <div className="flex gap-2">
           <button
-            key={i}
-            onClick={() => goToSlide(i)}
-            className={`h-3 rounded-full transition-all ${currentSlide === i
-              ? "w-8 sm:w-10 shadow-xl bg-instafitcore-green"
-              : "w-3 opacity-70 bg-instafitcore-green/50"
-              }`}
-            aria-label={`Go to slide ${i + 1}`}
-            aria-current={currentSlide === i ? 'true' : 'false'}
-          />
-
-        ))}
+            onClick={() => navigate(-1)}
+            className="p-3 md:p-4 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 text-white transition-all active:scale-90"
+            aria-label="Previous"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <button
+            onClick={() => navigate(1)}
+            className="p-3 md:p-4 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 text-white transition-all active:scale-90"
+            aria-label="Next"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
       </div>
-
-      {/* Navigation Arrows */}
-      <button
-        onClick={() => navigate(-1)}
-        className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-30 bg-black/30 hover:bg-black/50 rounded-full p-2 sm:p-3 transition-all backdrop-blur-sm"
-        aria-label="Previous slide"
-      >
-        <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
-      </button>
-      <button
-        onClick={() => navigate(1)}
-        className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-30 bg-black/30 hover:bg-black/50 rounded-full p-2 sm:p-3 transition-all backdrop-blur-sm"
-        aria-label="Next slide"
-      >
-        <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-      </button>
     </section>
   );
 };
