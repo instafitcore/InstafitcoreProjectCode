@@ -1196,13 +1196,15 @@ function ServicesPageContent() {
                         <div className="mt-2 ml-4 space-y-1">
                           {/* All Furniture Services */}
                           <button
-                            onClick={() => addFilter(cat.name, sub.subcategory)}
-                            className={`w-full text-left px-4 py-2 rounded-lg text-sm transition-all ${selectedFilters.length === 0 ? "bg-instafitcore-green/20 text-instafitcore-green font-semibold"
-                              : "hover:bg-gray-100 text-gray-700"
+                            onClick={() => clearAllFilters()}
+                            className={`w-full text-left px-4 py-2 rounded-lg text-sm transition-all ${selectedFilters.length === 0
+                                ? "bg-instafitcore-green/20 text-instafitcore-green font-semibold"
+                                : "hover:bg-gray-100 text-gray-700"
                               }`}
                           >
                             All Furniture Services
                           </button>
+
 
                           {/* Categories */}
                           {categories.map((cat) => {
