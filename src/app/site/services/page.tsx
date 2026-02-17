@@ -164,6 +164,32 @@ function ServicesPageContent() {
     setSelectedFilters([]);
   };
 
+  const pushToHistory = () => {
+    setHistoryStack((prev) => [
+      ...prev,
+      {
+        topLevel: selectedTopLevel,
+        selectedFilters,
+        expandedCategoryId,
+      },
+    ]);
+  };
+
+  const handleBackClick = () => {
+    if (historyStack.length > 0) {
+      const lastState = historyStack[historyStack.length - 1];
+
+      setSelectedTopLevel(lastState.topLevel);
+      setSelectedFilters(lastState.selectedFilters);
+      setExpandedCategoryId(lastState.expandedCategoryId);
+
+      setHistoryStack((prev) => prev.slice(0, prev.length - 1));
+    } else {
+      router.back();
+    }
+  };
+
+
   // Auth + persisted states
   const [userId, setUserId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -210,7 +236,13 @@ function ServicesPageContent() {
 
   const [selectedTopLevel, setSelectedTopLevel] =
     useState<string | null>(null);
-
+  const [historyStack, setHistoryStack] = useState<
+    {
+      topLevel: string | null;
+      selectedFilters: { category: string; subcategory: string | null }[];
+      expandedCategoryId: number | null;
+    }[]
+  >([]);
   // Auto-filter by typeId
   useEffect(() => {
     if (!typeId) return;
@@ -510,11 +542,8 @@ function ServicesPageContent() {
   }, [services, selectedFilters, activePriceFilter, searchText]);
 
 
-  const [previousState, setPreviousState] = useState<{
-    topLevel: string | null;
-    selectedFilters: { category: string; subcategory: string | null }[];
-    expandedCategoryId: number | null;
-  } | null>(null);
+
+
 
 
   const handleBookClick = (service: ServiceItem) => {
@@ -532,43 +561,37 @@ function ServicesPageContent() {
   // --- Render ---
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* HEADER */}
-      <header className="bg-instafitcore-green text-white pt-2 pb-3 md:pt-4 md:pb-5 shadow-lg">
-        <div className="w-full flex flex-col items-center justify-center text-center gap-2 px-2">
+      <header className="relative bg-instafitcore-green text-white pt-3 pb-4 md:pt-6 md:pb-8 shadow-lg overflow-hidden sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4">
 
-          <h1 className="text-lg md:text-xl lg:text-2xl font-extrabold flex items-center gap-2 justify-center">
-            <Bolt className="w-4 h-4 md:w-5 md:h-5" />
-            Premium Service Catalogue
-          </h1>
+          {/* BACK BUTTON - Positioned Top Left */}
+          <div className="absolute left-3 top-3 md:left-8 md:top-1/2 md:-translate-y-1/2 z-20">
+            <button
+              type="button"
+              onClick={handleBackClick}
 
-          <p className="text-xs md:text-sm opacity-90 text-center max-w-2xl">
-            Find the perfect solution—from delivery and installation to modular solutions, repair, and relocation—handled end-to-end by certified professionals
-          </p>
+              className="flex items-center justify-center h-8 w-8 md:h-auto md:w-auto md:px-4 md:py-2 rounded-full md:rounded-xl font-bold bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/10 shadow-sm transition-all active:scale-95"
+              aria-label="Go back"
+            >
+              <span className="text-lg md:text-sm md:mr-2">←</span>
+              <span className="hidden md:inline text-xs">Back</span>
+            </button>
 
+          </div>
+
+          {/* CENTERED CONTENT - Stays centered regardless of the button */}
+          <div className="flex flex-col items-center justify-center text-center gap-1 md:gap-2">
+            <h1 className="text-base md:text-xl lg:text-2xl font-extrabold flex items-center gap-2 justify-center leading-tight">
+              <Bolt className="w-4 h-4 md:w-5 md:h-5 shrink-0" />
+              Premium Service Catalogue
+            </h1>
+
+            <p className="text-[10px] md:text-sm opacity-90 text-center max-w-2xl leading-relaxed px-6 md:px-0">
+              Find the perfect solution—from delivery and installation to modular solutions, repair, and relocation—handled end-to-end by certified professionals
+            </p>
+          </div>
         </div>
       </header>
-
-      {previousState && selectedTopLevel !== "Furniture Service" && (
-        <div className="mt-4"> {/* Top margin only */}
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedTopLevel(previousState.topLevel);
-              setSelectedFilters(previousState.selectedFilters);
-              setExpandedCategoryId(previousState.expandedCategoryId);
-
-            }}
-            className="px-4 py-2 rounded-xl font-semibold 
-                 bg-instafitcore-green text-white hover:bg-instafitcore-green-hover
-                 shadow-md flex items-center gap-2"
-          >
-            ← Back
-          </button>
-        </div>
-      )}
-
-
-
       <div className="w-full flex flex-col lg:flex-row gap-6 md:gap-8 py-6 md:py-12 px-4 md:px-6">
         <aside className="hidden lg:block w-64 bg-white rounded-2xl shadow-xl p-5 sticky top-40 h-[calc(100vh-10rem)] overflow-y-auto">
           <h2 className="text-xl font-bold mb-5 flex items-center gap-2 text-gray-800">
@@ -591,18 +614,8 @@ function ServicesPageContent() {
                         clearAllFilters();
                         return;
                       }
-
-
-                      // Other items → set selectedTopLevel
-                      setPreviousState({
-                        topLevel: selectedTopLevel,
-                        selectedFilters,
-                        expandedCategoryId,
-                      });
-
-
+                      pushToHistory();
                       setSelectedTopLevel(item);
-                      clearAllFilters();
                       clearAllFilters();
                       setExpandedCategoryId(null);
                     }}
@@ -993,15 +1006,8 @@ function ServicesPageContent() {
                           return;
                         }
                         else {
-                          setPreviousState({
-                            topLevel: selectedTopLevel,
-                            selectedFilters,
-                            expandedCategoryId,
-                          });
-
-
+                          pushToHistory();
                           setSelectedTopLevel(item);
-                          clearAllFilters();
                           clearAllFilters();
                           setExpandedCategoryId(null);
                         }
@@ -1167,11 +1173,10 @@ function ServicesPageContent() {
                               selectedFilters,
                               expandedCategoryId,
                             });
+                            pushToHistory();
 
 
                             setSelectedTopLevel(item);
-                            clearAllFilters();
-                            clearAllFilters();
                             setExpandedCategoryId(null);
                             clearAllFilters();
                           }
@@ -1198,8 +1203,8 @@ function ServicesPageContent() {
                           <button
                             onClick={() => clearAllFilters()}
                             className={`w-full text-left px-4 py-2 rounded-lg text-sm transition-all ${selectedFilters.length === 0
-                                ? "bg-instafitcore-green/20 text-instafitcore-green font-semibold"
-                                : "hover:bg-gray-100 text-gray-700"
+                              ? "bg-instafitcore-green/20 text-instafitcore-green font-semibold"
+                              : "hover:bg-gray-100 text-gray-700"
                               }`}
                           >
                             All Furniture Services
