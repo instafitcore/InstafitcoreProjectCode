@@ -130,7 +130,7 @@ export default function BookServiceModal({ service, isOpen, onClose }: Props) {
   // REF: Errors state updated to handle nested address errors
   const [errors, setErrors] = useState<FormErrors>({});
   const [allowedPincodes, setAllowedPincodes] = useState<string[]>([]);
-
+const ONSITE_PAYMENT_LIMIT = 5000;
   const router = useRouter();
   const { toast } = useToast();
 
@@ -567,11 +567,21 @@ export default function BookServiceModal({ service, isOpen, onClose }: Props) {
   };
 
   // --- On-Site Payment (No Razorpay) ---
-  const handleOnSitePayment = async () => {
-    if (!validateForm() || isSubmitting) return;
-    setIsSubmitting(true);
-    await handleSubmit(); // No payment_id, order_id for on-site
-  };
+ const handleOnSitePayment = async () => {
+  if (!validateForm() || isSubmitting) return;
+
+  if (totalPrice >= ONSITE_PAYMENT_LIMIT) {
+    toast({
+      title: "On-Site Payment Not Allowed",
+      description: `On-site payment is allowed only for orders below ₹${ONSITE_PAYMENT_LIMIT}. Please use online payment.`,
+      variant: "destructive",
+    });
+    return;
+  }
+
+  setIsSubmitting(true);
+  await handleSubmit(); 
+};
 
   // --- Save booking after payment ---
   // --- Save booking after payment ---
@@ -932,9 +942,26 @@ export default function BookServiceModal({ service, isOpen, onClose }: Props) {
               <button onClick={handleRazorpayPayment} disabled={isSubmitting || !isFormValid} className={`py-3 px-6 sm:px-8 text-white font-bold rounded-lg shadow-md transition-all duration-300 flex items-center justify-center w-full sm:w-auto ${isSubmitting || !isFormValid ? 'bg-gray-400 cursor-not-allowed' : 'hover:scale-[1.02] hover:shadow-xl'}`} style={{ backgroundColor: PRIMARY_COLOR }}>
                 {isSubmitting ? <><Loader2 className="animate-spin w-5 h-5 mr-2" />Processing...</> : "Pay Now"}
               </button>
-              <button onClick={handleOnSitePayment} disabled={isSubmitting || !isFormValid} className={`py-3 px-6 sm:px-8 text-white font-bold rounded-lg shadow-md transition-all duration-300 flex items-center justify-center w-full sm:w-auto ${isSubmitting || !isFormValid ? 'bg-gray-400 cursor-not-allowed' : 'hover:scale-[1.02] hover:shadow-xl'}`} style={{ backgroundColor: ACCENT_COLOR }}>
-                {isSubmitting ? <><Loader2 className="animate-spin w-5 h-5 mr-2" />Processing...</> : "On-Site Payment"}
-              </button>
+             <button
+  onClick={handleOnSitePayment}
+  disabled={isSubmitting || !isFormValid || totalPrice >= ONSITE_PAYMENT_LIMIT}
+  className={`py-3 px-6 sm:px-8 text-white font-bold rounded-lg shadow-md transition-all duration-300 flex items-center justify-center w-full sm:w-auto 
+    ${isSubmitting || !isFormValid || totalPrice >= ONSITE_PAYMENT_LIMIT
+      ? 'bg-gray-400 cursor-not-allowed'
+      : 'hover:scale-[1.02] hover:shadow-xl'}`}
+  style={{ backgroundColor: ACCENT_COLOR }}
+>
+  {isSubmitting ? (
+    <>
+      <Loader2 className="animate-spin w-5 h-5 mr-2" />
+      Processing...
+    </>
+  ) : totalPrice >= ONSITE_PAYMENT_LIMIT ? (
+    "On-Site Payment Not Available Above ₹5000"
+  ) : (
+    "On-Site Payment"
+  )}
+</button>
             </div>
           </div>
         </div>

@@ -25,7 +25,7 @@ const LIGHT_BG = "#f5f7fa";
 const BORDER_COLOR = "#e6f6dc";
 
 const TAX_RATE = 0.18;
-
+const ONSITE_PAYMENT_LIMIT = 5000;
 type ServiceType = "installation" | "dismantling" | "repair";
 
 type ServiceDetails = {
@@ -377,131 +377,131 @@ const CartItemCard: React.FC<{
         onUpdateSelectedServices(item.id, newSelections);
     };
 
-   return (
-    <div
-        className="flex flex-col p-4 sm:p-6 bg-white rounded-2xl shadow-xl border-l-4 transition-all duration-300 relative h-full"
-        style={{ borderLeftColor: isServiceMissing ? "#f59e0b" : PRIMARY_COLOR }}
-    >
-        {/* Remove Button - Positioned consistently */}
-        <button
-            onClick={() => onRemove(item.id)}
-            disabled={item.isUpdating}
-            className="absolute top-2 right-2 p-2 bg-gray-100 text-gray-500 rounded-full hover:bg-red-50 hover:text-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition z-10"
-            title="Remove Item"
+    return (
+        <div
+            className="flex flex-col p-4 sm:p-6 bg-white rounded-2xl shadow-xl border-l-4 transition-all duration-300 relative h-full"
+            style={{ borderLeftColor: isServiceMissing ? "#f59e0b" : PRIMARY_COLOR }}
         >
-            <X className="w-4 h-4 sm:w-5 sm:h-5" />
-        </button>
+            {/* Remove Button - Positioned consistently */}
+            <button
+                onClick={() => onRemove(item.id)}
+                disabled={item.isUpdating}
+                className="absolute top-2 right-2 p-2 bg-gray-100 text-gray-500 rounded-full hover:bg-red-50 hover:text-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition z-10"
+                title="Remove Item"
+            >
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
 
-        {/* Header Section: Image + Title/Price */}
-        <div className="flex flex-row items-start w-full gap-3 sm:gap-6">
-            {/* Image Container - Fixed size to prevent layout shift */}
-            <div className="flex-shrink-0 relative w-20 h-20 sm:w-24 sm:h-24 border rounded-xl overflow-hidden shadow-sm bg-gray-50">
-                {item.service?.image_url ? (
-                    <Image
-                        src={item.service.image_url}
-                        alt={item.service.service_name || "Service Image"}
-                        fill
-                        style={{ objectFit: "cover" }}
-                    />
-                ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400">
-                        <Package className="w-8 h-8 sm:w-10 sm:h-10" />
-                    </div>
-                )}
-            </div>
-
-            {/* Title and Price - Using min-w-0 to allow truncate to work */}
-            <div className="flex-1 min-w-0 pr-8 sm:pr-0">
-                <h3 className="text-base sm:text-xl font-extrabold text-gray-900 leading-tight break-words sm:truncate">
-                    {item.service?.service_name || "Service Not Found"}
-                </h3>
-                <p className="text-xs sm:text-sm font-semibold text-gray-600 mt-1">
-                    Base: <span className="font-extrabold text-sm sm:text-lg" style={{ color: ACCENT_COLOR }}>
-                        ₹{unitPrice.toFixed(2)}
-                    </span>
-                </p>
-            </div>
-        </div>
-
-        {/* Options Section - Improved Grid/Flex for mobile */}
-        {availableServices.length > 0 && (
-            <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 mt-4 shadow-inner">
-                <p className="text-[10px] sm:text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider flex items-center">
-                    <Info className="w-3 h-3 mr-1 text-gray-400" /> Choose Options
-                </p>
-                <div className="grid grid-cols-1 xs:grid-cols-2 gap-2 text-xs sm:text-sm">
-                    {availableServices.map((detail) => (
-                        <label 
-                            key={detail.key} 
-                            className="flex items-center p-1.5 rounded-md hover:bg-white transition cursor-pointer border border-transparent hover:border-gray-200"
-                        >
-                            <input
-                                type="checkbox"
-                                checked={item.selected_services?.includes(detail.key) || false}
-                                onChange={(e) => handleServiceToggle(detail.key, e.target.checked)}
-                                disabled={item.isUpdating || isServiceMissing}
-                                className="form-checkbox h-4 w-4 border-gray-300 rounded focus:ring-0 mr-2"
-                                style={{ color: PRIMARY_COLOR }}
-                            />
-                            <div className="flex flex-col">
-                                <span className="font-bold text-gray-800 leading-none">{detail.name}</span>
-                                <span className="text-[10px] text-gray-500">₹{detail.price.toFixed(2)}</span>
-                            </div>
-                        </label>
-                    ))}
-                </div>
-            </div>
-        )}
-
-        {/* Repair Warning */}
-        {item.selected_services?.includes("repair") && (
-            <div className="mt-2 flex items-start gap-2 text-[10px] sm:text-xs text-amber-600 bg-amber-50 p-2 rounded">
-                <Info className="w-3 h-3 mt-[1px] flex-shrink-0" />
-                <span>Inspection fee only. Final quote provided on-site.</span>
-            </div>
-        )}
-
-        {/* Footer: Quantity and Subtotal */}
-        <div className="mt-auto pt-4 border-t border-gray-100">
-            <div className="flex flex-row items-center justify-between gap-2">
-                {/* Quantity Controller */}
-                <div className="flex items-center bg-gray-100 rounded-full p-1">
-                    <button
-                        onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
-                        disabled={item.quantity <= 1 || item.isUpdating || !item.service}
-                        className="p-1.5 text-gray-600 hover:bg-white hover:shadow-sm rounded-full disabled:opacity-30 transition"
-                    >
-                        <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
-                    </button>
-
-                    <span className="text-sm sm:text-base font-black px-3 min-w-[32px] text-center">
-                        {item.isUpdating ? (
-                            <Loader2 className="w-4 h-4 animate-spin" style={{ color: PRIMARY_COLOR }} />
-                        ) : (
-                            item.quantity
-                        )}
-                    </span>
-
-                    <button
-                        onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                        disabled={item.isUpdating || !item.service}
-                        className="p-1.5 text-gray-600 hover:bg-white hover:shadow-sm rounded-full disabled:opacity-30 transition"
-                    >
-                        <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-                    </button>
+            {/* Header Section: Image + Title/Price */}
+            <div className="flex flex-row items-start w-full gap-3 sm:gap-6">
+                {/* Image Container - Fixed size to prevent layout shift */}
+                <div className="flex-shrink-0 relative w-20 h-20 sm:w-24 sm:h-24 border rounded-xl overflow-hidden shadow-sm bg-gray-50">
+                    {item.service?.image_url ? (
+                        <Image
+                            src={item.service.image_url}
+                            alt={item.service.service_name || "Service Image"}
+                            fill
+                            style={{ objectFit: "cover" }}
+                        />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                            <Package className="w-8 h-8 sm:w-10 sm:h-10" />
+                        </div>
+                    )}
                 </div>
 
-                {/* Subtotal Display */}
-                <div className="text-right">
-                    <p className="text-[10px] sm:text-xs text-gray-400 font-bold uppercase">Subtotal</p>
-                    <p className="text-xl sm:text-2xl font-black leading-none" style={{ color: PRIMARY_COLOR }}>
-                        ₹{subtotal.toFixed(2)}
+                {/* Title and Price - Using min-w-0 to allow truncate to work */}
+                <div className="flex-1 min-w-0 pr-8 sm:pr-0">
+                    <h3 className="text-base sm:text-xl font-extrabold text-gray-900 leading-tight break-words sm:truncate">
+                        {item.service?.service_name || "Service Not Found"}
+                    </h3>
+                    <p className="text-xs sm:text-sm font-semibold text-gray-600 mt-1">
+                        Base: <span className="font-extrabold text-sm sm:text-lg" style={{ color: ACCENT_COLOR }}>
+                            ₹{unitPrice.toFixed(2)}
+                        </span>
                     </p>
                 </div>
             </div>
+
+            {/* Options Section - Improved Grid/Flex for mobile */}
+            {availableServices.length > 0 && (
+                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 mt-4 shadow-inner">
+                    <p className="text-[10px] sm:text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider flex items-center">
+                        <Info className="w-3 h-3 mr-1 text-gray-400" /> Choose Options
+                    </p>
+                    <div className="grid grid-cols-1 xs:grid-cols-2 gap-2 text-xs sm:text-sm">
+                        {availableServices.map((detail) => (
+                            <label
+                                key={detail.key}
+                                className="flex items-center p-1.5 rounded-md hover:bg-white transition cursor-pointer border border-transparent hover:border-gray-200"
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={item.selected_services?.includes(detail.key) || false}
+                                    onChange={(e) => handleServiceToggle(detail.key, e.target.checked)}
+                                    disabled={item.isUpdating || isServiceMissing}
+                                    className="form-checkbox h-4 w-4 border-gray-300 rounded focus:ring-0 mr-2"
+                                    style={{ color: PRIMARY_COLOR }}
+                                />
+                                <div className="flex flex-col">
+                                    <span className="font-bold text-gray-800 leading-none">{detail.name}</span>
+                                    <span className="text-[10px] text-gray-500">₹{detail.price.toFixed(2)}</span>
+                                </div>
+                            </label>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Repair Warning */}
+            {item.selected_services?.includes("repair") && (
+                <div className="mt-2 flex items-start gap-2 text-[10px] sm:text-xs text-amber-600 bg-amber-50 p-2 rounded">
+                    <Info className="w-3 h-3 mt-[1px] flex-shrink-0" />
+                    <span>Inspection fee only. Final quote provided on-site.</span>
+                </div>
+            )}
+
+            {/* Footer: Quantity and Subtotal */}
+            <div className="mt-auto pt-4 border-t border-gray-100">
+                <div className="flex flex-row items-center justify-between gap-2">
+                    {/* Quantity Controller */}
+                    <div className="flex items-center bg-gray-100 rounded-full p-1">
+                        <button
+                            onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
+                            disabled={item.quantity <= 1 || item.isUpdating || !item.service}
+                            className="p-1.5 text-gray-600 hover:bg-white hover:shadow-sm rounded-full disabled:opacity-30 transition"
+                        >
+                            <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
+                        </button>
+
+                        <span className="text-sm sm:text-base font-black px-3 min-w-[32px] text-center">
+                            {item.isUpdating ? (
+                                <Loader2 className="w-4 h-4 animate-spin" style={{ color: PRIMARY_COLOR }} />
+                            ) : (
+                                item.quantity
+                            )}
+                        </span>
+
+                        <button
+                            onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                            disabled={item.isUpdating || !item.service}
+                            className="p-1.5 text-gray-600 hover:bg-white hover:shadow-sm rounded-full disabled:opacity-30 transition"
+                        >
+                            <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+                        </button>
+                    </div>
+
+                    {/* Subtotal Display */}
+                    <div className="text-right">
+                        <p className="text-[10px] sm:text-xs text-gray-400 font-bold uppercase">Subtotal</p>
+                        <p className="text-xl sm:text-2xl font-black leading-none" style={{ color: PRIMARY_COLOR }}>
+                            ₹{subtotal.toFixed(2)}
+                        </p>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
-);
+    );
 };
 
 export default function CartPage() {
@@ -798,15 +798,31 @@ export default function CartPage() {
     const handleOnSitePayment = useCallback(async () => {
         setSubmitAttempted(true);
 
+        if (cartTotal >= ONSITE_PAYMENT_LIMIT) {
+            toast({
+                title: "On-Site Payment Not Allowed",
+                description: `On-site payment is allowed only for orders below ₹${ONSITE_PAYMENT_LIMIT}. Please use online payment.`,
+                variant: "destructive",
+            });
+            return;
+        }
+
         if (cartItems.length === 0) {
-            toast({ title: "Cart empty", description: "Add items before checkout.", variant: "destructive" });
+            toast({
+                title: "Cart empty",
+                description: "Add items before checkout.",
+                variant: "destructive"
+            });
             return;
         }
 
         const errors = validateAddress(addressFields);
         setAddressErrors(errors);
 
-        const hasInvalidItems = cartItems.some((it) => !it.service || !it.selected_services?.length);
+        const hasInvalidItems = cartItems.some(
+            (it) => !it.service || !it.selected_services?.length
+        );
+
         if (Object.keys(errors).length > 0 || hasInvalidItems) {
             if (hasInvalidItems) {
                 toast({
@@ -819,85 +835,84 @@ export default function CartPage() {
         }
 
         setIsSubmitting(true);
-        await handleSubmit(); // No payment_id, order_id for on-site
-    }, [cartItems, addressFields, toast, router, serviceablePincodes]);
+        await handleSubmit();
+    }, [cartItems, cartTotal, addressFields, toast]);
+    const handleUseMyLocation = () => {
+        if (!navigator.geolocation) {
+            toast({
+                title: "Not supported",
+                description: "Geolocation is not supported on this device.",
+                variant: "destructive",
+            });
+            return;
+        }
 
-   const handleUseMyLocation = () => {
-  if (!navigator.geolocation) {
-    toast({
-      title: "Not supported",
-      description: "Geolocation is not supported on this device.",
-      variant: "destructive",
-    });
-    return;
-  }
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                try {
+                    const { latitude, longitude } = position.coords;
 
-  navigator.geolocation.getCurrentPosition(
-    async (position) => {
-      try {
-        const { latitude, longitude } = position.coords;
+                    const res = await fetch(
+                        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
+                        {
+                            headers: {
+                                Accept: "application/json",
+                                "User-Agent": "InstaFitCore/1.0",
+                            },
+                        }
+                    );
 
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
-          {
-            headers: {
-              Accept: "application/json",
-              "User-Agent": "InstaFitCore/1.0",
+                    const data = await res.json();
+
+                    if (!data?.address) throw new Error();
+
+                    const addr = data.address;
+
+                    setAddressFields((prev) => ({
+                        ...prev,
+                        streetLocality: addr.road || "",
+                        areaZone: addr.suburb || addr.neighbourhood || "",
+                        cityTown: addr.city || addr.town || addr.village || "",
+                        state: addr.state || "",
+                        pincode: addr.postcode || "",
+                    }));
+
+                    toast({
+                        title: "Location detected",
+                        description: "Address filled successfully.",
+                        variant: "success",
+                    });
+                } catch {
+                    toast({
+                        title: "Failed",
+                        description: "Unable to detect address from location.",
+                        variant: "destructive",
+                    });
+                }
             },
-          }
+            (error) => {
+                let msg = "Location access failed.";
+
+                if (error.code === 1)
+                    msg = "Please allow location permission in browser settings.";
+                if (error.code === 2)
+                    msg = "Location unavailable.";
+                if (error.code === 3)
+                    msg = "Location request timed out.";
+
+                toast({
+                    title: "Location Error",
+                    description: msg,
+                    variant: "destructive",
+                });
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 15000,
+                maximumAge: 0,
+            }
         );
-
-        const data = await res.json();
-
-        if (!data?.address) throw new Error();
-
-        const addr = data.address;
-
-        setAddressFields((prev) => ({
-          ...prev,
-          streetLocality: addr.road || "",
-          areaZone: addr.suburb || addr.neighbourhood || "",
-          cityTown: addr.city || addr.town || addr.village || "",
-          state: addr.state || "",
-          pincode: addr.postcode || "",
-        }));
-
-        toast({
-          title: "Location detected",
-          description: "Address filled successfully.",
-          variant: "success",
-        });
-      } catch {
-        toast({
-          title: "Failed",
-          description: "Unable to detect address from location.",
-          variant: "destructive",
-        });
-      }
-    },
-    (error) => {
-      let msg = "Location access failed.";
-
-      if (error.code === 1)
-        msg = "Please allow location permission in browser settings.";
-      if (error.code === 2)
-        msg = "Location unavailable.";
-      if (error.code === 3)
-        msg = "Location request timed out.";
-
-      toast({
-        title: "Location Error",
-        description: msg,
-        variant: "destructive",
-      });
-    },
-    {
-      enableHighAccuracy: true,
-      timeout: 15000,
-      maximumAge: 0,
-    }
-  );
-};
+    };
 
 
     useEffect(() => {
@@ -1121,12 +1136,22 @@ export default function CartPage() {
                                 cartItems.some((it) => !it.selected_services?.length) ||
                                 !isPincodeValid ||
                                 cartItems.some((it) => it.isUpdating) ||
-                                isSubmitting
+                                isSubmitting ||
+                                cartTotal >= ONSITE_PAYMENT_LIMIT
                             }
                             className={`flex-1 py-3 sm:py-4 text-white text-lg sm:text-xl font-bold rounded-xl shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-[1.01] hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed`}
                             style={{ backgroundColor: ACCENT_COLOR }}
                         >
-                            {isSubmitting ? <><Loader2 className="animate-spin w-5 h-5 mr-2" />Processing...</> : "On-Site Payment"}
+                            {isSubmitting ? (
+                                <>
+                                    <Loader2 className="animate-spin w-5 h-5 mr-2" />
+                                    Processing...
+                                </>
+                            ) : cartTotal >= ONSITE_PAYMENT_LIMIT ? (
+                                "On-Site Not Available Above ₹5000"
+                            ) : (
+                                "On-Site Payment"
+                            )}
                             <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 ml-2" />
                         </button>
                     </div>

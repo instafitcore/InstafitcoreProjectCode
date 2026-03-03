@@ -561,11 +561,11 @@ function ServicesPageContent() {
   // --- Render ---
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="relative bg-instafitcore-green text-white pt-3 pb-4 md:pt-6 md:pb-8 shadow-lg overflow-hidden sticky top-0 z-50">
+      <header className="bg-instafitcore-green text-white pt-3 pb-4 md:pt-6 md:pb-8 shadow-lg overflow-hidden top-0 z-50">
         <div className="max-w-7xl mx-auto px-4">
 
           {/* BACK BUTTON - Positioned Top Left */}
-          <div className="absolute left-3 top-3 md:left-8 md:top-1/2 md:-translate-y-1/2 z-20">
+          <div className="absolute  sticky left-3 top-3 md:left-8 md:top-1/2 md:-translate-y-1/2 z-20">
             <button
               type="button"
               onClick={handleBackClick}
@@ -686,21 +686,44 @@ function ServicesPageContent() {
                             </button>
 
                             {/* SUBCATEGORIES */}
+                            {/* SUBCATEGORIES */}
                             {isExpanded &&
-                              subcategoriesMap[cat.id]?.map((sub) => (
-                                <button
-                                  key={sub.id}
-                                  onClick={() => addFilter(cat.name, sub.subcategory)}
-                                  className={`w-full text-left ml-4 px-4 py-2 mt-1 rounded-lg text-sm transition-all ${selectedFilters.some(
-                                    (f) => f.category === cat.name && f.subcategory === sub.subcategory
-                                  )
-                                    ? "bg-instafitcore-green text-white shadow-md"
-                                    : "text-gray-700 hover:bg-instafitcore-green/10"
-                                    }`}
-                                >
-                                  {sub.subcategory}
-                                </button>
-                              ))}
+                              subcategoriesMap[cat.id]?.map((sub) => {
+                                const isChecked = selectedFilters.some(
+                                  (f) =>
+                                    f.category === cat.name &&
+                                    f.subcategory === sub.subcategory
+                                );
+
+                                return (
+                                  <label
+                                    key={sub.id}
+                                    className="flex items-center gap-3 ml-4 px-4 py-2 mt-1 rounded-lg text-sm cursor-pointer hover:bg-gray-100"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={isChecked}
+                                      onChange={() => {
+                                        if (isChecked) {
+                                          removeFilter(cat.name, sub.subcategory);
+                                        } else {
+                                          addFilter(cat.name, sub.subcategory);
+                                        }
+                                      }}
+                                      className="w-4 h-4 accent-instafitcore-green"
+                                    />
+
+                                    <span
+                                      className={`${isChecked
+                                        ? "text-instafitcore-green font-semibold"
+                                        : "text-gray-700"
+                                        }`}
+                                    >
+                                      {sub.subcategory}
+                                    </span>
+                                  </label>
+                                );
+                              })}
                           </div>
                         );
                       })}
@@ -1044,53 +1067,69 @@ function ServicesPageContent() {
                         </button>
                         {categories.map((cat) => {
                           const isExpanded = expandedCategoryId === cat.id;
+
                           return (
                             <div key={cat.id}>
-                              <button
-                                onClick={() => {
-                                  setExpandedCategoryId(isExpanded ? null : cat.id);
-
-                                  const exists = selectedFilters.some(
-                                    (f) => f.category === cat.name && f.subcategory === null
-                                  );
-
-                                  setExpandedCategoryId(isExpanded ? null : cat.id);
-
-                                }}
-
-
-                                className={`w-full text-left px-3 py-2 rounded-lg text-sm font-semibold flex justify-between items-center transition-all ${isExpanded
+                              {/* CATEGORY HEADER */}
+                              <div
+                                className={`w-full px-3 py-2 rounded-lg text-sm font-semibold flex justify-between items-center transition-all ${isExpanded
                                   ? "bg-instafitcore-green/20 text-instafitcore-green"
                                   : "text-gray-800 hover:bg-gray-100"
                                   }`}
                               >
-                                {cat.name}
+                                <span>{cat.name}</span>
+
                                 {subcategoriesMap[cat.id]?.length > 0 && (
                                   <span
-                                    className={`transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`}
+                                    onClick={() =>
+                                      setExpandedCategoryId(isExpanded ? null : cat.id)
+                                    }
+                                    className={`cursor-pointer transition-transform duration-200 ${isExpanded ? "rotate-90" : ""
+                                      }`}
                                   >
                                     &gt;
                                   </span>
                                 )}
-                              </button>
+                              </div>
+
+                              {/* SUBCATEGORIES */}
                               {isExpanded &&
-                                subcategoriesMap[cat.id]?.map((sub) => (
-                                  <button
-                                    key={sub.id}
-                                    onClick={() => {
-                                      addFilter(cat.name, sub.subcategory);
-                                      setShowMobileMenu(false);
-                                    }}
-                                    className={`w-full text-left ml-4 px-4 py-2 mt-1 rounded-lg text-sm transition-all ${selectedFilters.some(
-                                      (f) => f.category === cat.name && f.subcategory === sub.subcategory
-                                    )
-                                      ? "bg-instafitcore-green text-white shadow-md"
-                                      : "text-gray-700 hover:bg-instafitcore-green/10"
-                                      }`}
-                                  >
-                                    {sub.subcategory}
-                                  </button>
-                                ))}
+                                subcategoriesMap[cat.id]?.map((sub) => {
+                                  const isChecked = selectedFilters.some(
+                                    (f) =>
+                                      f.category === cat.name &&
+                                      f.subcategory === sub.subcategory
+                                  );
+
+                                  return (
+                                    <label
+                                      key={sub.id}
+                                      className="flex items-center gap-3 ml-5 px-4 py-2 mt-1 rounded-lg text-sm cursor-pointer hover:bg-gray-100 transition"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={isChecked}
+                                        onChange={() => {
+                                          if (isChecked) {
+                                            removeFilter(cat.name, sub.subcategory);
+                                          } else {
+                                            addFilter(cat.name, sub.subcategory);
+                                          }
+                                        }}
+                                        className="w-4 h-4 accent-instafitcore-green"
+                                      />
+
+                                      <span
+                                        className={`${isChecked
+                                          ? "text-instafitcore-green font-semibold"
+                                          : "text-gray-700"
+                                          }`}
+                                      >
+                                        {sub.subcategory}
+                                      </span>
+                                    </label>
+                                  );
+                                })}
                             </div>
                           );
                         })}
@@ -1168,7 +1207,7 @@ function ServicesPageContent() {
                             return;
                           }
                           else {
-                            
+
                             pushToHistory();
                             setSelectedTopLevel(item);
                             setExpandedCategoryId(null);
@@ -1205,58 +1244,71 @@ function ServicesPageContent() {
                           </button>
 
 
-                          {/* Categories */}
                           {categories.map((cat) => {
                             const isExpanded = expandedCategoryId === cat.id;
 
                             return (
                               <div key={cat.id}>
-                                <button
-                                  onClick={() => {
-                                    setExpandedCategoryId(isExpanded ? null : cat.id);
-
-                                    const exists = selectedFilters.some(
-                                      (f) => f.category === cat.name && f.subcategory === null
-                                    );
-
-                                    setExpandedCategoryId(isExpanded ? null : cat.id);
-
-                                  }}
-
-
-                                  className={`w-full text-left px-3 py-2 rounded-lg text-sm font-semibold flex justify-between items-center transition-all ${isExpanded
-                                    ? "bg-instafitcore-green/20 text-instafitcore-green"
-                                    : "text-gray-800 hover:bg-gray-100"
+                                {/* CATEGORY HEADER */}
+                                <div
+                                  onClick={() =>
+                                    setExpandedCategoryId(isExpanded ? null : cat.id)
+                                  }
+                                  className={`w-full px-3 py-2 rounded-lg text-sm font-semibold flex justify-between items-center transition-all cursor-pointer ${isExpanded
+                                      ? "bg-instafitcore-green/20 text-instafitcore-green"
+                                      : "text-gray-800 hover:bg-gray-100"
                                     }`}
                                 >
-                                  {cat.name}
+                                  <span>{cat.name}</span>
+
                                   {subcategoriesMap[cat.id]?.length > 0 && (
                                     <span
-                                      className={`transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`}
+                                      className={`transition-transform duration-200 ${isExpanded ? "rotate-90" : ""
+                                        }`}
                                     >
                                       &gt;
                                     </span>
                                   )}
-                                </button>
+                                </div>
 
-                                {/* Subcategories */}
-                                {
-                                  isExpanded &&
-                                  subcategoriesMap[cat.id]?.map((sub) => (
-                                    <button
-                                      key={sub.id}
-                                      onClick={() => addFilter(cat.name, sub.subcategory)}
-                                      className={`w-full text-left ml-4 px-4 py-2 mt-1 rounded-lg text-sm transition-all ${selectedFilters.some(
-                                        (f) => f.category === cat.name && f.subcategory === sub.subcategory
-                                      )
-                                        ? "bg-instafitcore-green text-white shadow-md"
-                                        : "text-gray-700 hover:bg-instafitcore-green/10"
-                                        }`}
-                                    >
-                                      {sub.subcategory}
-                                    </button>
-                                  ))
-                                }
+                                {/* SUBCATEGORIES */}
+                                {isExpanded &&
+                                  subcategoriesMap[cat.id]?.map((sub) => {
+                                    const isChecked = selectedFilters.some(
+                                      (f) =>
+                                        f.category === cat.name &&
+                                        f.subcategory === sub.subcategory
+                                    );
+
+                                    return (
+                                      <label
+                                        key={sub.id}
+                                        className="flex items-center gap-3 ml-6 px-4 py-2 mt-1 rounded-lg text-sm cursor-pointer hover:bg-gray-100"
+                                      >
+                                        <input
+                                          type="checkbox"
+                                          checked={isChecked}
+                                          onChange={() => {
+                                            if (isChecked) {
+                                              removeFilter(cat.name, sub.subcategory);
+                                            } else {
+                                              addFilter(cat.name, sub.subcategory);
+                                            }
+                                          }}
+                                          className="w-4 h-4 accent-instafitcore-green"
+                                        />
+
+                                        <span
+                                          className={`${isChecked
+                                              ? "text-instafitcore-green font-semibold"
+                                              : "text-gray-700"
+                                            }`}
+                                        >
+                                          {sub.subcategory}
+                                        </span>
+                                      </label>
+                                    );
+                                  })}
                               </div>
                             );
                           })}

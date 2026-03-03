@@ -118,43 +118,6 @@ export default function FullNavbar() {
     },
   ];
 
-  useEffect(() => {
-    if (!user) return;
-
-    let logoutTimer: ReturnType<typeof setTimeout>;
-
-    const resetTimer = () => {
-      if (logoutTimer) clearTimeout(logoutTimer);
-
-      logoutTimer = setTimeout(async () => {
-        await supabase.auth.signOut();
-        router.push("/site");
-      }, AUTO_LOGOUT_TIME);
-    };
-
-    // User activity events
-    const events = [
-      "mousemove",
-      "mousedown",
-      "keydown",
-      "scroll",
-      "touchstart",
-    ];
-
-    events.forEach((event) =>
-      window.addEventListener(event, resetTimer)
-    );
-
-    // Start timer initially
-    resetTimer();
-
-    return () => {
-      if (logoutTimer) clearTimeout(logoutTimer);
-      events.forEach((event) =>
-        window.removeEventListener(event, resetTimer)
-      );
-    };
-  }, [user, router]);
 
 
   // Close search dropdown outside click
@@ -268,7 +231,45 @@ export default function FullNavbar() {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+useEffect(() => {
+  if (!user) return;
 
+  let logoutTimer: ReturnType<typeof setTimeout>;
+
+  const resetTimer = () => {
+    if (logoutTimer) clearTimeout(logoutTimer);
+
+    logoutTimer = setTimeout(async () => {
+      await supabase.auth.signOut();
+      router.push("/site");
+    }, AUTO_LOGOUT_TIME);
+  };
+
+  const events = ["mousemove", "mousedown", "keydown", "scroll", "touchstart"];
+
+  events.forEach((event) =>
+    window.addEventListener(event, resetTimer)
+  );
+
+  resetTimer();
+
+  // ✅ ADD THIS PART
+  const handleUnload = () => {
+    supabase.auth.signOut();
+  };
+
+  window.addEventListener("beforeunload", handleUnload);
+
+  return () => {
+    if (logoutTimer) clearTimeout(logoutTimer);
+
+    events.forEach((event) =>
+      window.removeEventListener(event, resetTimer)
+    );
+
+    window.removeEventListener("beforeunload", handleUnload);
+  };
+}, [user, router]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
