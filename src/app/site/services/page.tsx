@@ -561,24 +561,17 @@ function ServicesPageContent() {
   // --- Render ---
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* This puts the button JUST below a standard 64px (h-16) header */}
+      <div className="fixed top-20 left-4 z-[60] pointer-events-none">
+        <button
+          className="pointer-events-auto bg-white shadow-md border border-gray-200 px-4 py-2 rounded-full"
+          onClick={handleBackClick}
+        >
+          ← Back
+        </button>
+      </div>
       <header className="bg-instafitcore-green text-white pt-3 pb-4 md:pt-6 md:pb-8 shadow-lg overflow-hidden top-0 z-50">
         <div className="max-w-7xl mx-auto px-4">
-
-          {/* BACK BUTTON - Positioned Top Left */}
-          <div className="absolute  sticky left-3 top-3 md:left-8 md:top-1/2 md:-translate-y-1/2 z-20">
-            <button
-              type="button"
-              onClick={handleBackClick}
-
-              className="flex items-center justify-center h-8 w-8 md:h-auto md:w-auto md:px-4 md:py-2 rounded-full md:rounded-xl font-bold bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/10 shadow-sm transition-all active:scale-95"
-              aria-label="Go back"
-            >
-              <span className="text-lg md:text-sm md:mr-2">←</span>
-              <span className="hidden md:inline text-xs">Back</span>
-            </button>
-
-          </div>
-
           {/* CENTERED CONTENT - Stays centered regardless of the button */}
           <div className="flex flex-col items-center justify-center text-center gap-1 md:gap-2">
             <h1 className="text-base md:text-xl lg:text-2xl font-extrabold flex items-center gap-2 justify-center leading-tight">
@@ -1255,8 +1248,8 @@ function ServicesPageContent() {
                                     setExpandedCategoryId(isExpanded ? null : cat.id)
                                   }
                                   className={`w-full px-3 py-2 rounded-lg text-sm font-semibold flex justify-between items-center transition-all cursor-pointer ${isExpanded
-                                      ? "bg-instafitcore-green/20 text-instafitcore-green"
-                                      : "text-gray-800 hover:bg-gray-100"
+                                    ? "bg-instafitcore-green/20 text-instafitcore-green"
+                                    : "text-gray-800 hover:bg-gray-100"
                                     }`}
                                 >
                                   <span>{cat.name}</span>
@@ -1300,8 +1293,8 @@ function ServicesPageContent() {
 
                                         <span
                                           className={`${isChecked
-                                              ? "text-instafitcore-green font-semibold"
-                                              : "text-gray-700"
+                                            ? "text-instafitcore-green font-semibold"
+                                            : "text-gray-700"
                                             }`}
                                         >
                                           {sub.subcategory}
