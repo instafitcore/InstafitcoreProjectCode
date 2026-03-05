@@ -561,15 +561,20 @@ function ServicesPageContent() {
   // --- Render ---
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* This puts the button JUST below a standard 64px (h-16) header */}
-      <div className="fixed top-20 left-4 z-[60] pointer-events-none">
-        <button
-          className="pointer-events-auto bg-white shadow-md border border-gray-200 px-4 py-2 rounded-full"
-          onClick={handleBackClick}
-        >
-          ← Back
-        </button>
-      </div>
+    {/* Mobile: Small, tucked into the top left corner.
+  Web: Moves lower and stays out of the way of the main header.
+*/}
+<div className="fixed top-[75px] left-2 md:top-28 md:left-6 z-40">
+  <button
+    className="flex items-center gap-1 bg-white/80 backdrop-blur-md shadow-sm border border-gray-200 
+               px-2 py-1 md:px-4 md:py-2 rounded-lg 
+               hover:bg-white active:scale-95 transition-all"
+    onClick={handleBackClick}
+  >
+    <span className="text-xs md:text-sm font-bold text-gray-800">←</span>
+    <span className="text-[10px] md:text-sm font-medium text-gray-700">Back</span>
+  </button>
+</div>
       <header className="bg-instafitcore-green text-white pt-3 pb-4 md:pt-6 md:pb-8 shadow-lg overflow-hidden top-0 z-50">
         <div className="max-w-7xl mx-auto px-4">
           {/* CENTERED CONTENT - Stays centered regardless of the button */}
