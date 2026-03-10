@@ -1,0 +1,22 @@
+name: Permanent Key Generator
+on: workflow_dispatch # This lets you click a button to run it
+
+jobs:
+  make-key:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate Keystore
+        run: |
+          keytool -genkeypair -v -keystore instafitcore.keystore -alias instafit_alias -keyalg RSA -keysize 2048 -validity 10000 -storepass instafit123 -keypass instafit123 -dname "CN=InstaFitCore, O=Dev, C=IN"
+      
+      - name: Convert to Text (Base64)
+        run: |
+          base64 -w 0 instafitcore.keystore > keystore_base64.txt
+          
+      - name: Upload Key Files
+        uses: actions/upload-artifact@v4
+        with:
+          name: permanent-key-files
+          path: |
+            instafitcore.keystore
+            keystore_base64.txt
