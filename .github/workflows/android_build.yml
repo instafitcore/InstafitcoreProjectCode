@@ -1,29 +1,61 @@
-name: Build Instafitcore APK
+name: Build InstaFitCore (APK & Signed AAB)
 on:
   push:
     branches: [main]
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install
-      - run: mkdir -p out && touch out/index.html
-      - uses: actions/setup-java@v4
+
+      - name: Install Dependencies
+        run: |
+          npm install
+          mkdir -p out && touch out/index.html
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '21'
-      - uses: android-actions/setup-android@v3
-      - run: npx cap sync android
-      - run: |
-                cd android
-                chmod +x gradlew
-                # This command creates the .aab file instead of .apk
-                ./gradlew bundleRelease 
-      - uses: actions/upload-artifact@v4
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Capacitor Sync
+        run: npx cap sync android
+
+      - name: Build APK and AAB
+        run: |
+          cd android
+          chmod +x gradlew
+          # 1. Build Debug APK (For your phone testing)
+          ./gradlew assembleDebug
+          # 2. Build Release AAB (For Play Store)
+          ./gradlew bundleRelease
+
+      - name: Sign the AAB (Required by Google Play)
+        run: |
+          # Generate a temporary keystore
+          keytool -genkeypair -v -keystore release.keystore -alias instafit_alias -keyalg RSA -keysize 2048 -validity 10000 -storepass instafit123 -keypass instafit123 -dname "CN=InstaFitCore, O=Dev, C=IN"
+          # Sign the AAB file
+          jarsigner -keystore release.keystore -storepass instafit123 -keypass instafit123 android/app/build/outputs/bundle/release/app-release.aab instafit_alias
+
+      - name: Upload Testing APK
+        uses: actions/upload-artifact@v4
         with:
-          name: instafitcore-aab
+          name: 1-Instafit-Testing-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload Signed Production AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: 2-Instafit-Signed-AAB
           path: android/app/build/outputs/bundle/release/app-release.aab
