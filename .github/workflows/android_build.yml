@@ -20,6 +20,12 @@ jobs:
           npm install
           mkdir -p out && touch out/index.html
 
+      # THIS STEP FIXES THE "com.example" AND "provider" ERRORS
+      - name: Force Rename Restricted Package Name
+        run: |
+          # This finds every file in the android folder and replaces com.example.app with your real ID
+          find android -type f -exec sed -i 's/com.example.app/com.instafitcore.app/g' {} +
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
