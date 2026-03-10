@@ -2,20 +2,21 @@ name: Generate Permanent Key and PEM
 on: workflow_dispatch
 
 jobs:
-  build:
+  generate-permanent-assets:
     runs-on: ubuntu-latest
     steps:
-      - name: Generate Keystore
+      - name: Generate Keystore and Certificate
         run: |
+          # 1. Create the permanent keystore file
           keytool -genkeypair -v -keystore instafit.keystore -alias instafit_alias -keyalg RSA -keysize 2048 -validity 10000 -storepass instafit123 -keypass instafit123 -dname "CN=InstaFitCore, O=Dev, C=IN"
           
-          # This command creates the .pem file Google needs for the reset
+          # 2. Export the .pem certificate for Google Play Reset
           keytool -export -rfc -keystore instafit.keystore -alias instafit_alias -file upload_certificate.pem -storepass instafit123
           
-          # This creates the text for your GitHub Secret
+          # 3. Convert the keystore to a text string for GitHub Secrets
           base64 -w 0 instafit.keystore > keystore_base64.txt
 
-      - name: Upload Files
+      - name: Upload Files to GitHub
         uses: actions/upload-artifact@v4
         with:
           name: instafit-key-reset-files
