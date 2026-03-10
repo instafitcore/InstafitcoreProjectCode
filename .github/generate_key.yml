@@ -1,22 +1,25 @@
-name: Generate Keystore
-on: workflow_dispatch # This lets you run it manually
+name: Generate Permanent Key and PEM
+on: workflow_dispatch
 
 jobs:
-  generate:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Generate Key
+      - name: Generate Keystore
         run: |
-          keytool -genkeypair -v -keystore instafitcore.keystore -alias instafit_alias -keyalg RSA -keysize 2048 -validity 10000 -storepass instafit123 -keypass instafit123 -dname "CN=InstaFitCore, OU=Dev, O=InstaFit, L=Bangalore, S=KA, C=IN"
-      
-      - name: Convert to Base64
-        run: |
-          base64 -w 0 instafitcore.keystore > keystore_base64.txt
+          keytool -genkeypair -v -keystore instafit.keystore -alias instafit_alias -keyalg RSA -keysize 2048 -validity 10000 -storepass instafit123 -keypass instafit123 -dname "CN=InstaFitCore, O=Dev, C=IN"
           
-      - name: Upload result
+          # This command creates the .pem file Google needs for the reset
+          keytool -export -rfc -keystore instafit.keystore -alias instafit_alias -file upload_certificate.pem -storepass instafit123
+          
+          # This creates the text for your GitHub Secret
+          base64 -w 0 instafit.keystore > keystore_base64.txt
+
+      - name: Upload Files
         uses: actions/upload-artifact@v4
         with:
-          name: my-new-key
+          name: instafit-key-reset-files
           path: |
-            instafitcore.keystore
+            instafit.keystore
+            upload_certificate.pem
             keystore_base64.txt
