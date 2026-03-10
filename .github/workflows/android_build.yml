@@ -19,10 +19,11 @@ jobs:
       - uses: android-actions/setup-android@v3
       - run: npx cap sync android
       - run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleDebug
+                cd android
+                chmod +x gradlew
+                # This command creates the .aab file instead of .apk
+                ./gradlew bundleRelease 
       - uses: actions/upload-artifact@v4
         with:
-          name: instafitcore-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: instafitcore-aab
+          path: android/app/build/outputs/bundle/release/app-release.aab

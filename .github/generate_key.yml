@@ -1,0 +1,22 @@
+name: Generate Keystore
+on: workflow_dispatch # This lets you run it manually
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate Key
+        run: |
+          keytool -genkeypair -v -keystore instafitcore.keystore -alias instafit_alias -keyalg RSA -keysize 2048 -validity 10000 -storepass instafit123 -keypass instafit123 -dname "CN=InstaFitCore, OU=Dev, O=InstaFit, L=Bangalore, S=KA, C=IN"
+      
+      - name: Convert to Base64
+        run: |
+          base64 -w 0 instafitcore.keystore > keystore_base64.txt
+          
+      - name: Upload result
+        uses: actions/upload-artifact@v4
+        with:
+          name: my-new-key
+          path: |
+            instafitcore.keystore
+            keystore_base64.txt
