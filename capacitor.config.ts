@@ -1,10 +1,16 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.instafitcore.app1', // ✅ new unique package
+  appId: 'com.instafitcore.app1',
   appName: 'InstaFitCore',
   webDir: 'out',
-  bundledWebRuntime: false,
+
+  // ✅ IMPORTANT: Load live website (no white screen)
+  server: {
+    url: 'https://www.instafitcore.com',
+    cleartext: true,
+    androidScheme: 'https'
+  },
 
   plugins: {
     SplashScreen: {

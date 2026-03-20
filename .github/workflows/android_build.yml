@@ -1,4 +1,5 @@
-name: Build InstaFitCore (APK & Signed AAB)
+name: Build InstaFitCore (APK & AAB)
+
 on:
   push:
     branches: [main]
@@ -6,6 +7,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -15,16 +17,9 @@ jobs:
         with:
           node-version: 22
 
+      # ✅ Install dependencies ONLY (no fake out folder)
       - name: Install Dependencies
-        run: |
-          npm install
-          mkdir -p out && touch out/index.html
-
-      # THIS STEP FIXES THE "com.example" AND "provider" ERRORS
-      - name: Force Rename Restricted Package Name
-        run: |
-          # This finds every file in the android folder and replaces com.example.app with your real ID
-          find android -type f -exec sed -i 's/com.example.app/com.instafitcore.app1/g' {} +
+        run: npm install
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -35,33 +30,32 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
+      # ✅ Sync Capacitor
       - name: Capacitor Sync
         run: npx cap sync android
 
+      # ✅ Build APK & AAB
       - name: Build APK and AAB
         run: |
           cd android
           chmod +x gradlew
-          # 1. Build Debug APK (For your phone testing)
+          ./gradlew clean
           ./gradlew assembleDebug
-          # 2. Build Release AAB (For Play Store)
           ./gradlew bundleRelease
 
-      - name: Sign the AAB (Required by Google Play)
-        run: |
-          # Generate a temporary keystore
-          keytool -genkeypair -v -keystore release.keystore -alias instafit_alias -keyalg RSA -keysize 2048 -validity 10000 -storepass instafit123 -keypass instafit123 -dname "CN=InstaFitCore, O=Dev, C=IN"
-          # Sign the AAB file
-          jarsigner -keystore release.keystore -storepass instafit123 -keypass instafit123 android/app/build/outputs/bundle/release/app-release.aab instafit_alias
+      # ❌ REMOVE signing step (Play Store will handle it)
+      # No keytool, no jarsigner needed
 
+      # ✅ Upload APK (for testing)
       - name: Upload Testing APK
         uses: actions/upload-artifact@v4
         with:
-          name: 1-Instafit-Testing-APK
+          name: Instafit-Testing-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
 
-      - name: Upload Signed Production AAB
+      # ✅ Upload AAB (for Play Store)
+      - name: Upload Production AAB
         uses: actions/upload-artifact@v4
         with:
-          name: 2-Instafit-Signed-AAB
+          name: Instafit-Production-AAB
           path: android/app/build/outputs/bundle/release/app-release.aab
