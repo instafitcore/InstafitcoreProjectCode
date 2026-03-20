@@ -24,7 +24,7 @@ jobs:
       - name: Force Rename Restricted Package Name
         run: |
           # This finds every file in the android folder and replaces com.example.app with your real ID
-          find android -type f -exec sed -i 's/com.example.app/com.instafitcore.app/g' {} +
+          find android -type f -exec sed -i 's/com.example.app/com.instafitcore.app1/g' {} +
 
       - name: Setup Java
         uses: actions/setup-java@v4
