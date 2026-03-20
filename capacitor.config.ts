@@ -7,7 +7,7 @@ const config: CapacitorConfig = {
 
   // ✅ IMPORTANT: Load live website (no white screen)
   server: {
-    url: 'https://www.instafitcore.com',
+   // url: 'https://www.instafitcore.com',
     cleartext: true,
     androidScheme: 'https'
   },
