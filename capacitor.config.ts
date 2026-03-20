@@ -4,17 +4,16 @@ const config: CapacitorConfig = {
   appId: 'com.instafitcore.official',
   appName: 'Instafitcore',
   webDir: 'out',
-  server: {
-    url: 'https://www.instafitcore.com/', 
-    cleartext: true
-  },
   plugins: {
     SplashScreen: {
-      launchShowDuration: 2000,
-      backgroundColor: "#000000", // Changed to black for fitness theme
+      launchShowDuration: 3000,
+      backgroundColor: "#000000",
       showSpinner: true,
       androidScaleType: "CENTER_CROP"
     }
+  },
+  android: {
+    allowMixedContent: true
   }
 };
 export default config;
