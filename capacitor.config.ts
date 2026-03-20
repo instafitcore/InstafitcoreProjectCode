@@ -3,7 +3,7 @@ import { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.instafitcore.app1',
   appName: 'InstaFitCore',
-  webDir: 'out',
+  webDir: 'public',
 
   // ✅ IMPORTANT: Load live website (no white screen)
   server: {
