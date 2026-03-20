@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "com.instafitcore.app1"
+    namespace = "com.instafitcore.apps"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-       applicationId "com.instafitcore.app1"
+       applicationId "com.instafitcore.apps"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

@@ -1,7 +1,7 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.instafitcore.app1',
+  appId: 'com.instafitcore.apps',
   appName: 'InstaFitCore',
   webDir: 'public',
 

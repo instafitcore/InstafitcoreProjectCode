@@ -1,4 +1,4 @@
-package com.instafitcore.app1;
+package com.instafitcore.apps;
 
 import com.getcapacitor.BridgeActivity;
 
