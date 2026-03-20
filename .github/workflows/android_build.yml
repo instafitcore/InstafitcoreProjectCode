@@ -1,4 +1,4 @@
-name: Build InstaFitCore (APK & AAB)
+name: Build InstaFitCore (APK & Signed AAB)
 
 on:
   push:
@@ -21,12 +21,14 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
+      # ✅ Setup Java
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '21'
 
+      # ✅ Setup Android SDK
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
@@ -43,19 +45,23 @@ jobs:
           ./gradlew assembleDebug
           ./gradlew bundleRelease
 
-      # ❌ REMOVE signing step (Play Store will handle it)
-      # No keytool, no jarsigner needed
+      # ✅ SIGN AAB (required for Play Store)
+      - name: Sign the AAB
+        run: |
+          keytool -genkeypair -v -keystore release.keystore -alias instafit_alias -keyalg RSA -keysize 2048 -validity 10000 -storepass instafit123 -keypass instafit123 -dname "CN=InstaFitCore, O=Dev, C=IN"
 
-      # ✅ Upload APK (for testing)
+          jarsigner -keystore release.keystore -storepass instafit123 -keypass instafit123 android/app/build/outputs/bundle/release/app-release.aab instafit_alias
+
+      # ✅ Upload Debug APK (for testing)
       - name: Upload Testing APK
         uses: actions/upload-artifact@v4
         with:
           name: Instafit-Testing-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
 
-      # ✅ Upload AAB (for Play Store)
-      - name: Upload Production AAB
+      # ✅ Upload Signed AAB (for Play Store)
+      - name: Upload Signed AAB
         uses: actions/upload-artifact@v4
         with:
-          name: Instafit-Production-AAB
+          name: Instafit-Signed-AAB
           path: android/app/build/outputs/bundle/release/app-release.aab
