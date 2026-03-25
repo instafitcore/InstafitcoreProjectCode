@@ -239,7 +239,7 @@ export default function AdminCareersPage() {
               </button>
 
               <h2 className="text-2xl font-bold mb-4">
-                Application Details
+                Application Details.
               </h2>
 
               <p>
