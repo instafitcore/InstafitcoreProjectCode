@@ -113,7 +113,7 @@ export default function AdminCareersPage() {
         <div className="flex flex-wrap justify-between items-center gap-4 mb-8">
           <div>
             <h1 className="text-4xl font-extrabold text-slate-900">
-              Career Applications.
+              Career Applications
             </h1>
             <p className="text-slate-500 mt-1">
               Manage and review job applications
