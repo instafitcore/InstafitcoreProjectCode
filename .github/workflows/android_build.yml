@@ -36,7 +36,7 @@ jobs:
       - name: Decode Keystore
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" > keystore.txt
-          base64 -d keystore.txt > instafit.keystore
+          certutil -decode keystore.txt instafit.keystore
 
       # ✅ Build AAB
       - name: Build APK and AAB
