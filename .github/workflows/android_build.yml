@@ -17,26 +17,28 @@ jobs:
         with:
           node-version: 22
 
-      # ✅ Install dependencies ONLY (no fake out folder)
       - name: Install Dependencies
         run: npm install
 
-      # ✅ Setup Java
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '21'
 
-      # ✅ Setup Android SDK
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      # ✅ Sync Capacitor
       - name: Capacitor Sync
         run: npx cap sync android
 
-      # ✅ Build APK & AAB
+      # ✅ USE YOUR REAL KEY (VERY IMPORTANT)
+      - name: Decode Keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" > keystore.txt
+          base64 -d keystore.txt > instafit.keystore
+
+      # ✅ Build AAB
       - name: Build APK and AAB
         run: |
           cd android
@@ -45,21 +47,17 @@ jobs:
           ./gradlew assembleDebug
           ./gradlew bundleRelease
 
-      # ✅ SIGN AAB (required for Play Store)
+      # ✅ Sign with YOUR key
       - name: Sign the AAB
         run: |
-          keytool -genkeypair -v -keystore release.keystore -alias instafit_alias -keyalg RSA -keysize 2048 -validity 10000 -storepass instafit123 -keypass instafit123 -dname "CN=InstaFitCore, O=Dev, C=IN"
+          jarsigner -keystore instafit.keystore -storepass ${{ secrets.KEYSTORE_PASSWORD }} -keypass ${{ secrets.KEY_PASSWORD }} android/app/build/outputs/bundle/release/app-release.aab ${{ secrets.KEY_ALIAS }}
 
-          jarsigner -keystore release.keystore -storepass instafit123 -keypass instafit123 android/app/build/outputs/bundle/release/app-release.aab instafit_alias
-
-      # ✅ Upload Debug APK (for testing)
       - name: Upload Testing APK
         uses: actions/upload-artifact@v4
         with:
           name: Instafit-Testing-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
 
-      # ✅ Upload Signed AAB (for Play Store)
       - name: Upload Signed AAB
         uses: actions/upload-artifact@v4
         with:
