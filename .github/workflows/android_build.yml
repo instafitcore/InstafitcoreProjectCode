@@ -20,10 +20,6 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      # ✅ Build Next.js for production
-      - name: Build Next.js
-        run: npm run build && npm run export
-
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -36,6 +32,12 @@ jobs:
       - name: Capacitor Sync
         run: npx cap sync android
 
+      # ✅ Decode Keystore
+      - name: Decode Keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > instafit.keystore
+
+      # ✅ Build AAB
       - name: Build APK and AAB
         run: |
           cd android
@@ -44,30 +46,23 @@ jobs:
           ./gradlew assembleDebug
           ./gradlew bundleRelease
 
-      - name: Generate & Sign AAB
+      # ✅ Sign AAB
+      - name: Sign AAB
         run: |
-          cd android
-          keytool -genkeypair -v \
-            -keystore release.keystore \
-            -alias instafit_alias \
-            -keyalg RSA -keysize 2048 \
-            -validity 10000 \
-            -storepass instafit123 \
-            -keypass instafit123 \
-            -dname "CN=InstaFitCore, O=Dev, C=IN"
-
-          jarsigner -keystore release.keystore \
-            -storepass instafit123 \
-            -keypass instafit123 \
+          jarsigner -keystore instafit.keystore \
+            -storepass ${{ secrets.KEYSTORE_PASSWORD }} \
+            -keypass ${{ secrets.KEY_PASSWORD }} \
             android/app/build/outputs/bundle/release/app-release.aab \
-            instafit_alias
+            ${{ secrets.KEY_ALIAS }}
 
+      # ✅ Upload APK
       - name: Upload Testing APK
         uses: actions/upload-artifact@v4
         with:
           name: Instafit-Testing-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
 
+      # ✅ Upload AAB
       - name: Upload Signed AAB
         uses: actions/upload-artifact@v4
         with:
