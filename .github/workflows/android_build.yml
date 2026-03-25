@@ -9,35 +9,36 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Checkout code
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      # 2️⃣ Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
+      # 3️⃣ Install dependencies
       - name: Install Dependencies
         run: npm install
 
+      # 4️⃣ Setup Java
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '21'
 
+      # 5️⃣ Setup Android SDK
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
+      # 6️⃣ Sync Capacitor
       - name: Capacitor Sync
         run: npx cap sync android
 
-      # ✅ Decode Keystore
-      - name: Decode Keystore
-        run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > instafit.keystore
-
-      # ✅ Build AAB
+      # 7️⃣ Build APK & AAB
       - name: Build APK and AAB
         run: |
           cd android
@@ -46,23 +47,35 @@ jobs:
           ./gradlew assembleDebug
           ./gradlew bundleRelease
 
-      # ✅ Sign AAB
-      - name: Sign AAB
+      # 8️⃣ Generate temporary keystore & sign AAB
+      - name: Generate & Sign AAB (Temp Keystore)
         run: |
-          jarsigner -keystore instafit.keystore \
-            -storepass ${{ secrets.KEYSTORE_PASSWORD }} \
-            -keypass ${{ secrets.KEY_PASSWORD }} \
+          cd android
+          # Generate temporary keystore
+          keytool -genkeypair -v \
+            -keystore release.keystore \
+            -alias instafit_alias \
+            -keyalg RSA -keysize 2048 \
+            -validity 10000 \
+            -storepass instafit123 \
+            -keypass instafit123 \
+            -dname "CN=InstaFitCore, O=Dev, C=IN"
+          
+          # Sign the AAB
+          jarsigner -keystore release.keystore \
+            -storepass instafit123 \
+            -keypass instafit123 \
             android/app/build/outputs/bundle/release/app-release.aab \
-            ${{ secrets.KEY_ALIAS }}
+            instafit_alias
 
-      # ✅ Upload APK
+      # 9️⃣ Upload Debug APK (for testing)
       - name: Upload Testing APK
         uses: actions/upload-artifact@v4
         with:
           name: Instafit-Testing-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
 
-      # ✅ Upload AAB
+      # 🔟 Upload Signed Release AAB
       - name: Upload Signed AAB
         uses: actions/upload-artifact@v4
         with:
