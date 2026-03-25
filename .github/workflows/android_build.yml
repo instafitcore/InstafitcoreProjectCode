@@ -9,36 +9,33 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout code
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 2️⃣ Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      # 3️⃣ Install dependencies
       - name: Install Dependencies
         run: npm install
 
-      # 4️⃣ Setup Java
+      # ✅ Build Next.js for production
+      - name: Build Next.js
+        run: npm run build && npm run export
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '21'
 
-      # 5️⃣ Setup Android SDK
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      # 6️⃣ Sync Capacitor
       - name: Capacitor Sync
         run: npx cap sync android
 
-      # 7️⃣ Build APK & AAB
       - name: Build APK and AAB
         run: |
           cd android
@@ -47,11 +44,9 @@ jobs:
           ./gradlew assembleDebug
           ./gradlew bundleRelease
 
-      # 8️⃣ Generate temporary keystore & sign AAB
-      - name: Generate & Sign AAB (Temp Keystore)
+      - name: Generate & Sign AAB
         run: |
           cd android
-          # Generate temporary keystore
           keytool -genkeypair -v \
             -keystore release.keystore \
             -alias instafit_alias \
@@ -60,22 +55,19 @@ jobs:
             -storepass instafit123 \
             -keypass instafit123 \
             -dname "CN=InstaFitCore, O=Dev, C=IN"
-          
-          # Sign the AAB
+
           jarsigner -keystore release.keystore \
             -storepass instafit123 \
             -keypass instafit123 \
             android/app/build/outputs/bundle/release/app-release.aab \
             instafit_alias
 
-      # 9️⃣ Upload Debug APK (for testing)
       - name: Upload Testing APK
         uses: actions/upload-artifact@v4
         with:
           name: Instafit-Testing-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
 
-      # 🔟 Upload Signed Release AAB
       - name: Upload Signed AAB
         uses: actions/upload-artifact@v4
         with:
