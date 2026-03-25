@@ -32,6 +32,11 @@ jobs:
       - name: Capacitor Sync
         run: npx cap sync android
 
+      # ✅ Decode Keystore
+      - name: Decode Keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > instafit.keystore
+
       # ✅ Build AAB
       - name: Build APK and AAB
         run: |
@@ -41,13 +46,23 @@ jobs:
           ./gradlew assembleDebug
           ./gradlew bundleRelease
 
+      # ✅ Sign AAB
+      - name: Sign AAB
+        run: |
+          jarsigner -keystore instafit.keystore \
+            -storepass ${{ secrets.KEYSTORE_PASSWORD }} \
+            -keypass ${{ secrets.KEY_PASSWORD }} \
+            android/app/build/outputs/bundle/release/app-release.aab \
+            ${{ secrets.KEY_ALIAS }}
 
+      # ✅ Upload APK
       - name: Upload Testing APK
         uses: actions/upload-artifact@v4
         with:
           name: Instafit-Testing-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
 
+      # ✅ Upload AAB
       - name: Upload Signed AAB
         uses: actions/upload-artifact@v4
         with:
