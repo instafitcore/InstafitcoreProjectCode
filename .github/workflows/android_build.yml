@@ -34,23 +34,16 @@ jobs:
       - name: Capacitor Sync
         run: npx cap sync android
 
-      - name: Update Version Code & Package Name
+      - name: Force Package Name & Version
         run: |
-          # 1. Update Gradle Identity (App ID and Namespace)
-          sed -i 's/com.instafitcore.app/com.instafitcore.apps/g' android/app/build.gradle
-          sed -i 's/namespace "com.instafitcore.app"/namespace "com.instafitcore.apps"/g' android/app/build.gradle
+          # 1. Replace ALL instances of the old ID with the new one in the entire Android folder
+          grep -rli 'com.instafitcore.app' android | xargs -i@ sed -i 's/com.instafitcore.app/com.instafitcore.apps/g' @
           
-          # 2. Update Manifest & String files (Remove problematic package attribute)
-          sed -i 's/package="com.instafitcore.app"//g' android/app/src/main/AndroidManifest.xml
+          # 2. Specifically remove the 'package' attribute from Manifest to fix Gradle 8+ conflict
           sed -i 's/package="com.instafitcore.apps"//g' android/app/src/main/AndroidManifest.xml
-          sed -i 's/com.instafitcore.app/com.instafitcore.apps/g' android/app/src/main/res/values/strings.xml
           
-          # 3. Update Java File Content package declaration
-          # Using a wildcard search for the Java file to be safe
-          find android/app/src/main/java -name "MainActivity.java" -exec sed -i 's/package com.instafitcore.app/package com.instafitcore.apps/g' {} + || true
-          
-          # 4. Bump version code to 2
-          sed -i 's/versionCode 1/versionCode 2/g' android/app/build.gradle
+          # 3. Bump version code to 3 (in case version 2 was already "used" by a failed upload)
+          sed -i 's/versionCode [0-9]*/versionCode 3/g' android/app/build.gradle
 
       - name: Decode Permanent Keystore
         run: |
@@ -73,5 +66,5 @@ jobs:
       - name: Upload Signed AAB
         uses: actions/upload-artifact@v4
         with:
-          name: InstaFitCore-V2-Signed
+          name: InstaFitCore-V3-Signed
           path: android/app/build/outputs/bundle/release/app-release.aab
