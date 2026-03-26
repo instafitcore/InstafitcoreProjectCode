@@ -1,0 +1,10 @@
+name: Check Key Fingerprint
+on: workflow_dispatch
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Decode and Check
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > temp.keystore
+          keytool -list -v -keystore temp.keystore -alias ${{ secrets.KEY_ALIAS }} -storepass ${{ secrets.KEYSTORE_PASSWORD }}
