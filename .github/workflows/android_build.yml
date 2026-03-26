@@ -34,8 +34,14 @@ jobs:
       - name: Capacitor Sync
         run: npx cap sync android
 
+      - name: Update Version Code & Package Name
+        # This force-updates the Android files to match Google's requirements
+        run: |
+          cd android/app
+          sed -i 's/versionCode 1/versionCode 2/g' build.gradle
+          sed -i 's/com.instafitcore.app/com.instafitcore.apps/g' build.gradle
+
       - name: Decode Permanent Keystore
-        # This pulls your permanent key from the secrets we just set
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > release.keystore
 
@@ -46,7 +52,6 @@ jobs:
           ./gradlew bundleRelease
 
       - name: Sign AAB
-        # Signs the app using the permanent key that Google now expects
         run: |
           jarsigner -keystore release.keystore \
             -storepass "${{ secrets.KEYSTORE_PASSWORD }}" \
@@ -57,5 +62,5 @@ jobs:
       - name: Upload Signed AAB
         uses: actions/upload-artifact@v4
         with:
-          name: InstaFitCore-Production-AAB
+          name: InstaFitCore-V2-Signed
           path: android/app/build/outputs/bundle/release/app-release.aab
