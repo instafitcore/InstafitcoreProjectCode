@@ -17,7 +17,6 @@ jobs:
           node-version: 22
 
       - name: Install Dependencies
-        # This builds your Next.js project and prepares the 'out' folder
         run: |
           npm install
           mkdir -p out
@@ -35,18 +34,10 @@ jobs:
       - name: Capacitor Sync
         run: npx cap sync android
 
-      - name: Generate Keystore Inside GitHub
-        # We create the key here so you don't need it on your PC
+      - name: Decode Permanent Keystore
+        # This pulls your permanent key from the secrets we just set
         run: |
-          keytool -genkeypair -v \
-            -keystore release.keystore \
-            -alias instafit_alias \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -storepass instafit2026 \
-            -keypass instafit2026 \
-            -dname "CN=InstaFit, O=Dev, C=IN"
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > release.keystore
 
       - name: Build AAB
         run: |
@@ -55,13 +46,13 @@ jobs:
           ./gradlew bundleRelease
 
       - name: Sign AAB
-        # This uses the password 'instafit2026' we created 2 steps ago
+        # Signs the app using the permanent key that Google now expects
         run: |
           jarsigner -keystore release.keystore \
-            -storepass instafit2026 \
-            -keypass instafit2026 \
+            -storepass "${{ secrets.KEYSTORE_PASSWORD }}" \
+            -keypass "${{ secrets.KEY_PASSWORD }}" \
             android/app/build/outputs/bundle/release/app-release.aab \
-            instafit_alias
+            "${{ secrets.KEY_ALIAS }}"
 
       - name: Upload Signed AAB
         uses: actions/upload-artifact@v4
