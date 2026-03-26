@@ -34,23 +34,24 @@ jobs:
       - name: Capacitor Sync
         run: npx cap sync android
 
-     - name: Update Version Code & Package Name
+      - name: Update Version Code & Package Name
         run: |
-          # 1. Update Gradle Identity
+          # 1. Update Gradle Identity (App ID and Namespace)
           sed -i 's/com.instafitcore.app/com.instafitcore.apps/g' android/app/build.gradle
           sed -i 's/namespace "com.instafitcore.app"/namespace "com.instafitcore.apps"/g' android/app/build.gradle
           
-          # 2. Update Manifest & String files
+          # 2. Update Manifest & String files (Remove problematic package attribute)
           sed -i 's/package="com.instafitcore.app"//g' android/app/src/main/AndroidManifest.xml
           sed -i 's/package="com.instafitcore.apps"//g' android/app/src/main/AndroidManifest.xml
           sed -i 's/com.instafitcore.app/com.instafitcore.apps/g' android/app/src/main/res/values/strings.xml
           
-          # 3. Update Java File Content
-          sed -i 's/package com.instafitcore.app/package com.instafitcore.apps/g' android/app/src/main/java/com/example/app/MainActivity.java || true
+          # 3. Update Java File Content package declaration
+          # Using a wildcard search for the Java file to be safe
+          find android/app/src/main/java -name "MainActivity.java" -exec sed -i 's/package com.instafitcore.app/package com.instafitcore.apps/g' {} + || true
           
           # 4. Bump version code to 2
           sed -i 's/versionCode 1/versionCode 2/g' android/app/build.gradle
-          
+
       - name: Decode Permanent Keystore
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > release.keystore
@@ -59,12 +60,10 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          # This builds the unsigned AAB
           ./gradlew bundleRelease
 
       - name: Sign AAB
         run: |
-          # This step uses your secret key to sign the built AAB
           jarsigner -keystore release.keystore \
             -storepass "${{ secrets.KEYSTORE_PASSWORD }}" \
             -keypass "${{ secrets.KEY_PASSWORD }}" \
