@@ -20,6 +20,7 @@ jobs:
         run: |
           npm install
           mkdir -p out
+          # Ensures Capacitor has a web directory to sync
           touch out/index.html
 
       - name: Setup Java
@@ -35,11 +36,17 @@ jobs:
         run: npx cap sync android
 
       - name: Update Version Code & Package Name
-        # This force-updates the Android files to match Google's requirements
+        # This section fixes the AndroidManifest error and updates identity
         run: |
           cd android/app
+          # 1. Update Version Code to 2 (to fix 'Version 1 already used' error)
           sed -i 's/versionCode 1/versionCode 2/g' build.gradle
+          
+          # 2. Update Package Name to the plural version Google expects
           sed -i 's/com.instafitcore.app/com.instafitcore.apps/g' build.gradle
+          
+          # 3. FIX: Remove the hardcoded package attribute from Manifest (Required for Gradle 8+)
+          sed -i 's/package="[^"]*"//g' src/main/AndroidManifest.xml
 
       - name: Decode Permanent Keystore
         run: |
