@@ -1,8 +1,8 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "com.instafitcore.apps"
-    compileSdk = rootProject.ext.compileSdkVersion
+    namespace "com.instafitcore.apps"
+    compileSdk rootProject.ext.compileSdkVersion
 
     defaultConfig {
         applicationId "com.instafitcore.apps"
@@ -17,19 +17,11 @@ android {
         }
     }
 
-    // 🔥 ADD THIS BLOCK
-    signingConfigs {
-        release {
-            storeFile file("my-release-key.jks")   // 👉 place your .jks file in android/app/
-            storePassword "your_store_password"
-            keyAlias "your_key_alias"
-            keyPassword "your_key_password"
-        }
-    }
-
+    // Removed the 'signingConfigs' block from here because GitHub handles signing
+    
     buildTypes {
         release {
-            signingConfig signingConfigs.release   // 🔥 VERY IMPORTANT
+            // Removed the 'signingConfig' line to prevent the "file not found" error
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
