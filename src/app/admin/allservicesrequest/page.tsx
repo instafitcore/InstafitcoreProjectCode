@@ -100,7 +100,7 @@ export default function AdminAllRequestsPage() {
             {/* --- HEADER --- */}
             <div className="flex items-center justify-between mb-8">
                 <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">
-                    Service Requests Management
+                    Service Requests Management.
                 </h1>
 
                 <div className="flex gap-3">
