@@ -34,21 +34,23 @@ jobs:
       - name: Capacitor Sync
         run: npx cap sync android
 
-      - name: Update Version Code & Package Name
+     - name: Update Version Code & Package Name
         run: |
-          # 1. Force update the package name in the gradle file
+          # 1. Update Gradle Identity
           sed -i 's/com.instafitcore.app/com.instafitcore.apps/g' android/app/build.gradle
-          
-          # 2. Force update the namespace in the gradle file
           sed -i 's/namespace "com.instafitcore.app"/namespace "com.instafitcore.apps"/g' android/app/build.gradle
           
-          # 3. Remove the package attribute from the Manifest to avoid the Gradle 8+ conflict
+          # 2. Update Manifest & String files
           sed -i 's/package="com.instafitcore.app"//g' android/app/src/main/AndroidManifest.xml
           sed -i 's/package="com.instafitcore.apps"//g' android/app/src/main/AndroidManifest.xml
+          sed -i 's/com.instafitcore.app/com.instafitcore.apps/g' android/app/src/main/res/values/strings.xml
+          
+          # 3. Update Java File Content
+          sed -i 's/package com.instafitcore.app/package com.instafitcore.apps/g' android/app/src/main/java/com/example/app/MainActivity.java || true
           
           # 4. Bump version code to 2
           sed -i 's/versionCode 1/versionCode 2/g' android/app/build.gradle
-
+          
       - name: Decode Permanent Keystore
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > release.keystore
