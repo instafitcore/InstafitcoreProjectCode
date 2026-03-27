@@ -37,10 +37,10 @@ jobs:
       - name: Force Package Name & Version
         run: |
           # 1. Replace ALL instances of the old ID with the new one in the entire Android folder
-          grep -rli 'com.instafitcore.apps' android | xargs -i@ sed -i 's/com.instafitcore.apps/com.instafitcore.appss/g' @
+          grep -rli 'com.instafitcore.apps' android | xargs -i@ sed -i 's/com.instafitcore.apps/com.instafitcore.apps/g' @
           
           # 2. Specifically remove the 'package' attribute from Manifest to fix Gradle 8+ conflict
-          sed -i 's/package="com.instafitcore.appss"//g' android/app/src/main/AndroidManifest.xml
+          sed -i 's/package="com.instafitcore.apps"//g' android/app/src/main/AndroidManifest.xml
           
           # 3. Bump version code to 3 (in case version 2 was already "used" by a failed upload)
           sed -i 's/versionCode [0-9]*/versionCode 3/g' android/app/build.gradle
