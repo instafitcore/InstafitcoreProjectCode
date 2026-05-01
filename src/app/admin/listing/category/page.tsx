@@ -1,17 +1,14 @@
 "use client";
 
-import { useEffect, useState, ChangeEvent } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase-client";
 import { Pencil, Trash2, Search } from "lucide-react";
 import { useAdminToast } from "@/components/AdminToast";
-
-const GREEN = "#8ed26b";
 
 type CategoryItem = {
   id: number;
   category: string;
   description?: string | null;
-  image_url?: string | null;
 };
 
 export default function CategoryAdminPage() {
@@ -23,8 +20,6 @@ export default function CategoryAdminPage() {
 
   const [categoryName, setCategoryName] = useState("");
   const [description, setDescription] = useState("");
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -41,127 +36,70 @@ export default function CategoryAdminPage() {
     const timer = setTimeout(() => {
       setDebouncedSearch(search);
     }, 400);
-
     return () => clearTimeout(timer);
   }, [search]);
 
-
-  // Fetch categories
   const fetchCategories = async (q = "", filter = "All") => {
     setLoading(true);
-
     let query = supabase
       .from("categories")
-      .select("id, category, description, image_url")
-      .order("id", { ascending: false })
-      .limit(50);
+      .select("id, category, description")
+      .order("id", { ascending: false });
 
     if (q.trim()) query = query.ilike("category", `%${q}%`);
     if (filter !== "All") query = query.eq("category", filter);
 
     const { data, error } = await query;
-
     if (!error) setCategories(data || []);
     setLoading(false);
   };
-
 
   useEffect(() => {
     fetchCategories(debouncedSearch, filterCategory);
   }, [debouncedSearch, filterCategory]);
 
-
   const uniqueCategories = Array.from(new Set(categories.map((c) => c.category))).sort();
 
+  const handleAddCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
 
-  const uploadCategoryImage = async (file: File) => {
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${crypto.randomUUID()}.${fileExt}`;
-    const filePath = `categories/${fileName}`;
-
-    const { error } = await supabase.storage
-      .from("category-images")
-      .upload(filePath, file);
-
-    if (error) throw error;
-
-    const { data } = supabase.storage
-      .from("category-images")
-      .getPublicUrl(filePath);
-
-    return data.publicUrl;
-  };
-
-
-  // Add new category
- const handleAddCategory = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setSubmitting(true);
-
-  if (!categoryName.trim()) {
-    addToast("Category name is required.", "error");
-    setSubmitting(false);
-    return;
-  }
-
-  if (!description.trim()) {
-    addToast("Description is required.", "error");
-    setSubmitting(false);
-    return;
-  }
-
-  if (!imageFile) {
-    addToast("Category image is required.", "error");
-    setSubmitting(false);
-    return;
-  }
-
-  const duplicate = categories.find(
-    (c) => c.category.toLowerCase() === categoryName.trim().toLowerCase()
-  );
-  if (duplicate) {
-    addToast("This category already exists.", "error");
-    setSubmitting(false);
-    return;
-  }
-
-  try {
-    const imageUrl = await uploadCategoryImage(imageFile);
-
-    const { error } = await supabase.from("categories").insert([
-      {
-        category: categoryName,
-        description,
-        image_url: imageUrl,
-      },
-    ]);
-
-    if (error) {
-      addToast(`Failed: ${error.message}`, "error");
+    if (!categoryName.trim() || !description.trim()) {
+      addToast("Name and Description are required.", "error");
+      setSubmitting(false);
       return;
     }
 
-    addToast("Category added successfully!", "success");
+    const duplicate = categories.find(
+      (c) => c.category.toLowerCase() === categoryName.trim().toLowerCase()
+    );
+    if (duplicate) {
+      addToast("This category already exists.", "error");
+      setSubmitting(false);
+      return;
+    }
 
-    setCategoryName("");
-    setDescription("");
-    setImageFile(null);
-    setPreview(null);
+    try {
+      const { error } = await supabase.from("categories").insert([
+        { category: categoryName, description },
+      ]);
 
-    fetchCategories();
-  } catch (err: any) {
-    addToast(err.message || "Something went wrong", "error");
-  } finally {
-    setSubmitting(false);
-  }
-};
+      if (error) throw error;
 
+      addToast("Category added successfully!", "success");
+      setCategoryName("");
+      setDescription("");
+      fetchCategories();
+    } catch (err: any) {
+      addToast(err.message || "Something went wrong", "error");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-  // Edit modal helpers
   const openEditModal = (item: CategoryItem) => {
     setEditItem(item);
     setOriginalEditItem({ ...item });
-    setPreview(item.image_url || null);
     setEditModalOpen(true);
   };
 
@@ -169,15 +107,8 @@ export default function CategoryAdminPage() {
     if (!editItem || !originalEditItem) return false;
     return (
       editItem.category.trim() !== originalEditItem.category?.trim() ||
-      (editItem.description ?? "") !== (originalEditItem.description ?? "") ||
-      preview !== originalEditItem.image_url
+      (editItem.description ?? "") !== (originalEditItem.description ?? "")
     );
-  };
-
-  // Delete modal helpers
-  const openDeleteModal = (item: CategoryItem) => {
-    setDeleteItem(item);
-    setDeleteModalOpen(true);
   };
 
   const handleDeleteCategory = async () => {
@@ -196,7 +127,7 @@ export default function CategoryAdminPage() {
       <h1 className="text-3xl font-bold mb-8 text-gray-800">Category Management</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        {/* LEFT SIDE: List & Search */}
+        {/* LEFT SIDE: List */}
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white shadow-md p-5 rounded-2xl flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 w-full">
@@ -206,70 +137,42 @@ export default function CategoryAdminPage() {
                 placeholder="Search categories..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-
                 className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-[#8ed26b] outline-none"
               />
             </div>
-
             <select
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
-
               className="px-4 py-3 border rounded-xl focus:ring-2 focus:ring-[#8ed26b] bg-white"
             >
-              <option value="All">All Categories</option>
+              <option value="All">All</option>
               {uniqueCategories.map((cat, idx) => (
-                <option key={idx} value={cat}>
-                  {cat}
-                </option>
+                <option key={idx} value={cat}>{cat}</option>
               ))}
             </select>
-
-            <span className="px-4 py-2 bg-[#8ed26b]/20 text-[#8ed26b] rounded-xl font-semibold">
-              {loading ? "..." : categories.length}
-            </span>
           </div>
 
-          {/* CATEGORY CARDS */}
           {loading ? (
             <p className="text-center py-10">Loading...</p>
-          ) : categories.length === 0 ? (
-            <p className="text-center py-10 bg-white rounded-xl shadow">No categories found.</p>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-4">
               {categories.map((c) => (
-                <div
-                  key={c.id}
-                  className="bg-white shadow-lg rounded-2xl overflow-hidden hover:shadow-2xl transition"
-                >
-                  <div className="h-40 bg-gray-100">
-                    {c.image_url ? (
-                      <img src={c.image_url} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="flex items-center justify-center h-full text-gray-400">No Image</div>
-                    )}
-                  </div>
-
-                  <div className="p-5 space-y-2">
+                <div key={c.id} className="bg-white p-6 shadow-md rounded-2xl flex justify-between items-center">
+                  <div>
                     <h2 className="text-xl font-semibold text-gray-800">{c.category}</h2>
-                    {c.description && <p className="text-gray-600">{c.description}</p>}
-
-                    <div className="flex justify-between mt-4">
-                      <button
-                        onClick={() => openEditModal(c)}
-                        className="flex items-center gap-1 px-4 py-2 bg-[#8ed26b]/20 text-[#8ed26b] rounded-xl hover:bg-[#8ed26b]/30"
-                      >
-                        <Pencil size={16} /> Edit
-                      </button>
-
-                      <button
-                        disabled={deletingId === c.id}
-                        onClick={() => openDeleteModal(c)}
-                        className="flex items-center gap-1 px-4 py-2 bg-red-100 text-red-600 rounded-xl hover:bg-red-200 disabled:opacity-50"
-                      >
-                        <Trash2 size={16} /> {deletingId === c.id ? "..." : "Delete"}
-                      </button>
-                    </div>
+                    <p className="text-gray-600">{c.description}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => openEditModal(c)} className="p-2 bg-gray-100 rounded-lg text-gray-600 hover:bg-[#8ed26b]/20 hover:text-[#8ed26b]">
+                      <Pencil size={18} />
+                    </button>
+                    <button 
+                      disabled={deletingId === c.id}
+                      onClick={() => { setDeleteItem(c); setDeleteModalOpen(true); }} 
+                      className="p-2 bg-gray-100 rounded-lg text-red-500 hover:bg-red-100"
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </div>
                 </div>
               ))}
@@ -278,12 +181,8 @@ export default function CategoryAdminPage() {
         </div>
 
         {/* RIGHT SIDE: Add Form */}
-        <form
-          onSubmit={handleAddCategory}
-          className="bg-white shadow-xl rounded-3xl p-7 space-y-5 h-[600px] overflow-y-auto"
-        >
+        <form onSubmit={handleAddCategory} className="bg-white shadow-xl rounded-3xl p-7 space-y-5 h-fit">
           <h2 className="text-xl font-bold text-gray-800">Add New Category</h2>
-
           <div>
             <label className="font-medium text-gray-700">Category Name</label>
             <input
@@ -293,38 +192,15 @@ export default function CategoryAdminPage() {
               className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-[#8ed26b] outline-none"
             />
           </div>
-
           <div>
             <label className="font-medium text-gray-700">Description</label>
             <textarea
-              rows={3}
+              rows={4}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-[#8ed26b] outline-none"
             />
           </div>
-
-          <div>
-            <label className="font-medium text-gray-700">Category Image</label>
-            <label className="border-2 border-dashed border-gray-300 rounded-xl h-40 flex items-center justify-center cursor-pointer hover:border-[#8ed26b] relative">
-              {preview ? (
-                <img src={preview} className="absolute inset-0 w-full h-full object-cover rounded-xl" />
-              ) : (
-                <span className="text-gray-500">Upload Image</span>
-              )}
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                  const file = e.target.files?.[0] ?? null;
-                  setImageFile(file);
-                  if (file) setPreview(URL.createObjectURL(file));
-                }}
-              />
-            </label>
-          </div>
-
           <button
             type="submit"
             disabled={submitting}
@@ -335,140 +211,58 @@ export default function CategoryAdminPage() {
         </form>
       </div>
 
-
-
       {/* EDIT MODAL */}
       {editModalOpen && editItem && (
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl p-6 flex gap-6 relative">
-
-            {/* Left: Form */}
-            <div className="flex-1">
-              <button
-                onClick={() => setEditModalOpen(false)}
-                className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
-              >
-                ✕
-              </button>
-
-              <h2 className="text-2xl font-bold mb-4 text-gray-800">Edit Category</h2>
-
-              <div className="space-y-3">
-                <div>
-                  <label className="block font-medium text-gray-700 mb-1">Category Name</label>
-                  <input
-                    type="text"
-                    value={editItem.category}
-                    onChange={(e) => setEditItem({ ...editItem, category: e.target.value })}
-                    className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-[#8ed26b]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-medium text-gray-700 mb-1">Description</label>
-                  <textarea
-                    rows={3}
-                    value={editItem.description ?? ""}
-                    onChange={(e) => setEditItem({ ...editItem, description: e.target.value })}
-                    className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-[#8ed26b]"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Right: Image Upload + Buttons */}
-            <div className="w-64 flex-shrink-0 flex flex-col items-center justify-start">
-              <label className="border-2 border-dashed border-gray-300 rounded-xl h-40 w-full flex items-center justify-center cursor-pointer relative mb-4">
-                {preview ? (
-                  <img src={preview} className="absolute inset-0 w-full h-full object-cover rounded-xl" />
-                ) : (
-                  <span className="text-gray-500">Upload Image</span>
-                )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                    const file = e.target.files?.[0] ?? null;
-                    setImageFile(file);
-                    if (file) setPreview(URL.createObjectURL(file));
-                  }}
-                />
-              </label>
-
-              <button
-                onClick={async () => {
-                  if (!editItem) return;
-
-                  // Check duplicate excluding current item
-                  const duplicate = categories.find(
-                    (c) =>
-                      c.category.toLowerCase() === editItem.category.trim().toLowerCase() &&
-                      c.id !== editItem.id
-                  );
-                  if (duplicate) {
-                    addToast("This category name already exists.", "error");
-                    return;
-                  }
-
-                  let updatedImage = editItem.image_url;
-
-                  if (imageFile) {
-                    updatedImage = await uploadCategoryImage(imageFile);
-                  }
-
-                  await supabase
-                    .from("categories")
-                    .update({
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <h2 className="text-2xl font-bold mb-4">Edit Category</h2>
+            <div className="space-y-4">
+              <input
+                type="text"
+                value={editItem.category}
+                onChange={(e) => setEditItem({ ...editItem, category: e.target.value })}
+                className="w-full border rounded-xl p-3"
+              />
+              <textarea
+                rows={3}
+                value={editItem.description ?? ""}
+                onChange={(e) => setEditItem({ ...editItem, description: e.target.value })}
+                className="w-full border rounded-xl p-3"
+              />
+              <div className="flex gap-3">
+                <button
+                  onClick={async () => {
+                    await supabase.from("categories").update({
                       category: editItem.category,
                       description: editItem.description,
-                      image_url: updatedImage,
-                    })
-                    .eq("id", editItem.id);
-
-                  fetchCategories(search, filterCategory);
-                  setEditModalOpen(false);
-                  addToast("Category updated successfully!", "success");
-                }}
-                disabled={!isEditChanged()}
-                className={`w-full py-2 rounded-xl text-white ${isEditChanged() ? "bg-[#8ed26b] hover:bg-[#6ebb53]" : "bg-gray-300 cursor-not-allowed"
-                  }`}
-              >
-                Update
-              </button>
-
-              <button
-                onClick={() => setEditModalOpen(false)}
-                className="mt-3 w-full py-2 rounded-xl bg-gray-200 hover:bg-gray-300"
-              >
-                Cancel
-              </button>
+                    }).eq("id", editItem.id);
+                    fetchCategories(search, filterCategory);
+                    setEditModalOpen(false);
+                    addToast("Updated!", "success");
+                  }}
+                  disabled={!isEditChanged()}
+                  className="flex-1 py-3 bg-[#8ed26b] text-white rounded-xl disabled:bg-gray-300"
+                >
+                  Update
+                </button>
+                <button onClick={() => setEditModalOpen(false)} className="flex-1 py-3 bg-gray-200 rounded-xl">
+                  Cancel
+                </button>
+              </div>
             </div>
-
           </div>
         </div>
       )}
 
-      {/* DELETE MODAL */}
+      {/* DELETE MODAL (Simplified) */}
       {deleteModalOpen && deleteItem && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50 p-4">
-          <div className="bg-white p-7 rounded-2xl w-full max-w-md shadow-2xl relative text-center">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">Delete Category</h2>
-            <p className="mb-6">Are you sure you want to delete <strong>{deleteItem.category}</strong>?</p>
-
-            <div className="flex justify-center gap-3">
-              <button
-                onClick={() => setDeleteModalOpen(false)}
-                className="px-5 py-2 rounded-xl bg-gray-200 hover:bg-gray-300"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteCategory}
-                className="px-5 py-2 rounded-xl bg-red-500 text-white hover:bg-red-600"
-              >
-                {deletingId === deleteItem.id ? "Deleting..." : "Delete"}
-              </button>
+        <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50 p-4">
+          <div className="bg-white p-7 rounded-2xl max-w-sm w-full text-center">
+            <h2 className="text-xl font-bold mb-4">Delete Category?</h2>
+            <p className="mb-6 text-gray-600">This will permanently remove <strong>{deleteItem.category}</strong>.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteModalOpen(false)} className="flex-1 py-2 bg-gray-200 rounded-xl">Cancel</button>
+              <button onClick={handleDeleteCategory} className="flex-1 py-2 bg-red-500 text-white rounded-xl">Delete</button>
             </div>
           </div>
         </div>
