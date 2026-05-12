@@ -42,12 +42,11 @@ jobs:
           # 2. Specifically remove the 'package' attribute from Manifest to fix Gradle 8+ conflict
           sed -i 's/package="com.instafitcore.apps"//g' android/app/src/main/AndroidManifest.xml
           
-          # 3. BUMP VERSION CODE TO 4 (Google Play rejected 3)
-          # This line finds "versionCode X" and replaces it with "versionCode 4"
-          sed -i 's/versionCode [0-9]*/versionCode 4/g' android/app/build.gradle
+          # 3. BUMP VERSION CODE TO 5 (Play Console rejected 3 and 4)
+          sed -i 's/versionCode [0-9]*/versionCode 5/g' android/app/build.gradle
           
-          # 4. Optional: Update Version Name to match
-          sed -i 's/versionName ".*"/versionName "1.0.4"/g' android/app/build.gradle
+          # 4. Update Version Name to match
+          sed -i 's/versionName ".*"/versionName "1.0.5"/g' android/app/build.gradle
 
       - name: Decode Permanent Keystore
         run: |
@@ -70,5 +69,6 @@ jobs:
       - name: Upload Signed AAB
         uses: actions/upload-artifact@v4
         with:
-          name: InstaFitCore-V3-Signed
+          # Renamed to V5 to ensure you download the correct build
+          name: InstaFitCore-V5-Signed
           path: android/app/build/outputs/bundle/release/app-release.aab
