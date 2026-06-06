@@ -693,6 +693,23 @@ export default function CartPage() {
                 });
             }
 
+            await fetch("/api/send-owner-email", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    orderNo: generatedOrderNo,
+    customerName: addressFields.fullName,
+    mobile: addressFields.mobile,
+    address: fullAddress,
+    services: servicesBooked,
+    amount: cartTotal,
+    paymentStatus: payment_id ? "Paid" : "Pending (On Site)",
+    paymentId: payment_id || null,
+  }),
+});
+
             router.push("/site/order-tracking");
 
         } catch (err: any) {

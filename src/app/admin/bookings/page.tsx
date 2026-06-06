@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase-client";
-import { Search, User, Phone, X, Calendar, DollarSign, Clock } from "lucide-react";
+import { Search, User, Phone, X, Calendar, DollarSign, Clock, Eye, Download } from "lucide-react";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -82,6 +82,10 @@ export default function BookingsPage() {
     const [employeePhone, setEmployeePhone] = useState("");
     const [newStatus, setNewStatus] = useState("");
     const [modalError, setModalError] = useState("");
+
+    // --- VIEW DETAILS POPUP STATE ---
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+    const [viewedBookingId, setViewedBookingId] = useState<number | null>(null);
     // -------------------
 
     const downloadExcel = () => {
@@ -172,6 +176,75 @@ export default function BookingsPage() {
         doc.save("Bookings_Full_Report.pdf");
     };
 
+    // Download dynamic PDF receipt for a single booking details card
+    const downloadSingleBookingPDF = (booking: Booking) => {
+        const doc = new jsPDF("p", "pt", "a4");
+
+        // Header Section
+        doc.setFillColor(248, 250, 252);
+        doc.rect(0, 0, 595, 120, "F");
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(22);
+        doc.setTextColor(31, 41, 55);
+        doc.text("Booking Invoice", 40, 55);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.setTextColor(100, 116, 139);
+        doc.text(`Order reference generated: ${new Date(booking.created_at).toLocaleString()}`, 40, 75);
+
+        // Right aligned order meta details
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.setTextColor(71, 85, 105);
+        doc.text(`ORDER NO: ${booking.order_no}`, 410, 55);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.text(`Status: ${booking.status}`, 410, 75);
+        doc.text(`Payment: ${booking.payment_id ? "Paid" : "Unpaid"}`, 410, 92);
+
+        // Booking Structure Table
+        autoTable(doc, {
+            startY: 150,
+            head: [["Detail Field", "Information Values"]],
+            body: [
+                ["Customer Name", booking.customer_name],
+                ["Service Requested", booking.service_name],
+                ["Selected Sub-Categories / Types", booking.service_types.join(", ")],
+                ["Execution Date", booking.date],
+                ["Preferred Time Slot", booking.booking_time],
+                ["Payment Reference ID", booking.razorpay_order_id || "On Site Payment Option"],
+                ["Installation / Work Address", booking.address || "No custom destination address provided"],
+                ["Assigned Employee Name", booking.employee_name || "Unassigned / Pending staff setup"],
+                ["Employee Contact Line", booking.employee_phone || "Not Available"],
+            ],
+            theme: "striped",
+            headStyles: { fillColor: [79, 70, 229], fontStyle: "bold" },
+            styles: { fontSize: 11, cellPadding: 8, overflow: "linebreak" },
+            columnStyles: {
+                0: { cellWidth: 160, fontStyle: "bold", textColor: [71, 85, 105] },
+                1: { textColor: [15, 23, 42] }
+            }
+        });
+
+        // Price Breakouts
+        const currentY = (doc as any).lastAutoTable.finalY + 40;
+        doc.setLineWidth(1);
+        doc.setDrawColor(226, 232, 240);
+        doc.line(40, currentY, 555, currentY);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.setTextColor(31, 41, 55);
+        doc.text("Total Gross Amount Due:", 320, currentY + 30);
+
+        doc.setTextColor(22, 163, 74);
+        doc.setFontSize(16);
+        doc.text(`INR ${booking.total_price.toFixed(2)}`, 480, currentY + 30);
+
+        doc.save(`Invoice_${booking.order_no}.pdf`);
+    };
 
 
     // Fetches initial data
@@ -203,8 +276,6 @@ export default function BookingsPage() {
                     (b.service_name?.toLowerCase() || "").includes(search.toLowerCase()) ||
                     (b.order_no?.toLowerCase() || "").includes(search.toLowerCase())
             );
-
-
         }
 
         if (statusFilter !== "All Status") {
@@ -336,11 +407,12 @@ export default function BookingsPage() {
         // Disable any option whose index is less than the current status index (i.e., previous steps)
         return optionIndex < currentIndex;
     };
-    const selectedBooking = bookings.find(b => b.id === selectedBookingId);
 
+    const selectedBooking = bookings.find(b => b.id === selectedBookingId);
+    const detailBooking = bookings.find(b => b.id === viewedBookingId);
 
     return (
-        <div className="p-8 min-h-screen bg-gray-50">
+        <div className="p-4 md:p-8 min-h-screen bg-gray-50 max-w-7xl mx-auto">
             <div className="flex items-center justify-between mb-8">
                 <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">
                     Booking Management Dashboard
@@ -365,9 +437,9 @@ export default function BookingsPage() {
 
 
             {/* --- FILTER CARD --- */}
-            <div className="bg-white shadow-xl rounded-2xl p-8 border border-gray-100 mb-8">
-                <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-bold text-gray-800 tracking-tight">
+            <div className="bg-white shadow-xl rounded-2xl p-6 mb-8 border border-gray-100"> {/* Reduced p-8 to p-6 */}
+                <div className="flex justify-between items-center mb-4"> {/* Reduced mb-6 to mb-4 */}
+                    <h2 className="text-xl font-bold text-gray-800">
                         Filter & Search
                     </h2>
                     <div className="px-4 py-1.5 bg-gray-50 rounded-full text-sm font-semibold text-instafitcore-green-hover border border-gray-100">
@@ -375,8 +447,7 @@ export default function BookingsPage() {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4"> {/* Added sm:grid-cols-2 */}
                     {/* 1. Search */}
                     <div className="relative">
                         <Search className="absolute left-3 top-3 text-gray-400 w-5 h-5" />
@@ -453,27 +524,24 @@ export default function BookingsPage() {
 
             {/* --- TABLE --- */}
             <div className="bg-white rounded-xl shadow-2xl border border-gray-100 overflow-x-auto">
-                <table className="min-w-full text-left">
+                <table className="w-full text-left border-collapse"> {/* Changed min-w-full to w-full */}
                     <thead className="bg-gray-50 border-b border-gray-200">
                         <tr className="text-gray-600 text-sm font-bold uppercase tracking-wider">
                             <th className="p-4">Order No</th>
-
                             <th className="p-4">Customer</th>
                             <th className="p-4">Razorpay Order ID</th>
-
                             <th className="p-4">Service</th>
                             <th className="p-4">Date & Time</th>
                             <th className="p-4 text-right">Price</th>
-                            <th className="p-4">Address</th>
                             <th className="p-4">Assigned Employee</th>
                             <th className="p-4 text-center">Payment Status</th>
                             <th className="p-4 text-center">Status</th>
+                            <th className="p-4 text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="text-gray-800 divide-y divide-gray-100">
-                        {/* Loading/No Bookings logic */}
                         {loading || filtered.length === 0 ? (
-                            <tr><td colSpan={10} className="p-10 text-center text-gray-500 text-lg">{loading ? "Loading bookings..." : "No bookings found matching filters."}</td></tr>
+                            <tr><td colSpan={11} className="p-10 text-center text-gray-500 text-lg">{loading ? "Loading bookings..." : "No bookings found matching filters."}</td></tr>
                         ) : (
                             filtered.map((b) => (
                                 <tr key={b.id} className="hover:bg-blue-50/50 transition-colors duration-150">
@@ -484,7 +552,7 @@ export default function BookingsPage() {
                                         {b.customer_name}
                                         <div className="text-xs text-gray-500 font-normal mt-0.5">Types: {b.service_types.join(", ")}</div>
                                     </td>
-                                                                       <td className="p-4 font-mono text-xs text-gray-600 whitespace-nowrap">
+                                    <td className="p-4 font-mono text-xs text-gray-600 whitespace-nowrap">
                                         {b.razorpay_order_id ? (
                                             b.razorpay_order_id
                                         ) : (
@@ -504,7 +572,6 @@ export default function BookingsPage() {
                                     <td className="p-4 font-extrabold text-lg text-green-600 text-right whitespace-nowrap">
                                         ₹{b.total_price.toFixed(2)}
                                     </td>
-                                    <td className="p-4 max-w-xs text-xs text-gray-500">{b.address || "Address Not Provided"}</td>
 
                                     {/* Employee Details Column */}
                                     <td className="p-4">
@@ -551,7 +618,6 @@ export default function BookingsPage() {
                                                 <option
                                                     key={statusOption}
                                                     value={statusOption}
-                                                    // DISABLES previous statuses in the workflow
                                                     disabled={isStatusDisabled(b.status, statusOption)}
                                                     className={isStatusDisabled(b.status, statusOption) ? "text-gray-400" : ""}
                                                 >
@@ -559,6 +625,20 @@ export default function BookingsPage() {
                                                 </option>
                                             ))}
                                         </select>
+                                    </td>
+
+                                    {/* Action Eye Button Column */}
+                                    <td className="p-4 text-center">
+                                        <button
+                                            onClick={() => {
+                                                setViewedBookingId(b.id);
+                                                setIsDetailModalOpen(true);
+                                            }}
+                                            className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                                            title="View Details"
+                                        >
+                                            <Eye className="w-5 h-5" />
+                                        </button>
                                     </td>
                                 </tr>
                             ))
@@ -649,6 +729,163 @@ export default function BookingsPage() {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+
+            {/* --- DETAILED BOOKING POPUP --- */}
+            {isDetailModalOpen && detailBooking && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all scale-100 duration-200 max-h-[90vh] flex flex-col">
+
+                        {/* Popup Header */}
+                        <div className="p-6 bg-slate-900 text-white flex justify-between items-center">
+                            <div>
+                                <span className="text-xs font-mono uppercase tracking-wider text-slate-400">Booking Record</span>
+                                <h3 className="text-xl font-bold flex items-center mt-1">
+                                    Order ID: <span className="font-mono ml-2 text-indigo-400">{detailBooking.order_no}</span>
+                                </h3>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <button
+                                    onClick={() => downloadSingleBookingPDF(detailBooking)}
+                                    className="p-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl transition-colors flex items-center gap-2 text-sm font-medium border border-slate-700"
+                                    title="Download Receipt Image/PDF"
+                                >
+                                    <Download className="w-4 h-4" />
+                                    <span>Download Details</span>
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setIsDetailModalOpen(false);
+                                        setViewedBookingId(null);
+                                    }}
+                                    className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-xl transition-colors"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Popup Content Grid */}
+                        <div className="p-6 overflow-y-auto space-y-6 bg-slate-50/50 flex-1">
+
+                            {/* Row 1: Status Badges */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Work Status</label>
+                                    <span className={`inline-block px-3 py-1 text-sm font-semibold rounded-lg border ${getStatusClasses(detailBooking.status)}`}>
+                                        {detailBooking.status}
+                                    </span>
+                                </div>
+                                <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Payment Status</label>
+                                    <span className={`inline-block px-3 py-1 text-sm font-semibold rounded-lg ${getPaymentStatusClasses(detailBooking.payment_id)}`}>
+                                        {detailBooking.payment_id ? "Paid Successfully" : "Pending Payment"}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Row 2: Customer and Service info */}
+                            <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm space-y-4">
+                                <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wider border-b pb-2 text-slate-500">Core Details</h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <p className="text-gray-500 font-medium">Customer Name</p>
+                                        <p className="text-base font-bold text-gray-900 mt-0.5">{detailBooking.customer_name}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-gray-500 font-medium">Service Name</p>
+                                        <p className="text-base font-bold text-gray-900 mt-0.5">{detailBooking.service_name}</p>
+                                    </div>
+                                    <div className="sm:col-span-2">
+                                        <p className="text-gray-500 font-medium">Service Categories</p>
+                                        <div className="flex flex-wrap gap-1.5 mt-1">
+                                            {detailBooking.service_types.map((t, idx) => (
+                                                <span key={idx} className="bg-slate-100 text-slate-700 text-xs font-medium px-2.5 py-1 rounded-md border border-slate-200">
+                                                    {t}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Row 3: Schedule & Address */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm space-y-3">
+                                    <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wider border-b pb-2 text-slate-500">Schedule</h4>
+                                    <div className="text-sm space-y-2">
+                                        <div className="flex items-center space-x-2 text-gray-700">
+                                            <Calendar className="w-4 h-4 text-indigo-500" />
+                                            <span className="font-medium">Date:</span> <span>{detailBooking.date}</span>
+                                        </div>
+                                        <div className="flex items-center space-x-2 text-gray-700">
+                                            <Clock className="w-4 h-4 text-indigo-500" />
+                                            <span className="font-medium">Time Slot:</span> <span>{detailBooking.booking_time}</span>
+                                        </div>
+                                        <div className="flex items-center space-x-2 text-gray-700">
+                                            <DollarSign className="w-4 h-4 text-green-500" />
+                                            <span className="font-medium">Total Cost:</span> <span className="font-bold text-green-600 text-base">₹{detailBooking.total_price.toFixed(2)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm space-y-2">
+                                    <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wider border-b pb-2 text-slate-500">Location Address</h4>
+                                    <p className="text-sm text-gray-600 leading-relaxed pt-1">
+                                        {detailBooking.address || "No target address specified for this booking record."}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Row 4: Personnel Logistics */}
+                            <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm space-y-3">
+                                <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wider border-b pb-2 text-slate-500">Assigned Logistics Personnel</h4>
+                                {detailBooking.employee_name ? (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                                        <div className="flex items-center space-x-2 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                                            <User className="w-5 h-5 text-indigo-500" />
+                                            <div>
+                                                <p className="text-xs text-gray-400 font-medium">Employee Name</p>
+                                                <p className="font-semibold text-gray-800">{detailBooking.employee_name}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center space-x-2 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                                            <Phone className="w-5 h-5 text-indigo-500" />
+                                            <div>
+                                                <p className="text-xs text-gray-400 font-medium">Contact Number</p>
+                                                <p className="font-semibold text-gray-800">{detailBooking.employee_phone}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-red-500 bg-red-50 border border-red-100 p-3 rounded-lg font-medium text-center">
+                                        No structural work employee has been dispatched to handle this task layout yet.
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* System Metadata Tracking Block */}
+                            <div className="text-[11px] font-mono text-gray-400 text-center pt-2">
+                                Database ID Row: {detailBooking.id} &bull; Gateway Signature: {detailBooking.razorpay_order_id || "N/A"} &bull; Created At System Clock: {new Date(detailBooking.created_at).toISOString()}
+                            </div>
+                        </div>
+
+                        {/* Footer Buttons */}
+                        <div className="p-4 bg-gray-100 border-t flex justify-end">
+                            <button
+                                onClick={() => {
+                                    setIsDetailModalOpen(false);
+                                    setViewedBookingId(null);
+                                }}
+                                className="px-5 py-2 bg-slate-700 hover:bg-slate-800 text-white font-semibold rounded-xl text-sm shadow-sm transition-colors"
+                            >
+                                Dismiss Window
+                            </button>
+                        </div>
+
                     </div>
                 </div>
             )}
