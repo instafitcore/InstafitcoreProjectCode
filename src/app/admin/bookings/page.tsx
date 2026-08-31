@@ -15,6 +15,7 @@ type Booking = {
     razorpay_order_id?: string | null;
     user_id: string | null;
     customer_name: string;
+    customer_mobile?: string | null; // Customer phone number
     service_name: string;
     service_types: string[];
     date: string;
@@ -94,6 +95,7 @@ export default function BookingsPage() {
             "Order No": b.order_no,
             "Razorpay Order ID": b.razorpay_order_id || "On Site Payment",
             "Customer Name": b.customer_name,
+            "Customer Mobile": b.customer_mobile || "Not Provided",
             "User ID": b.user_id || "Guest",
             "Service Name": b.service_name,
             "Service Types": b.service_types.join(", "),
@@ -126,6 +128,7 @@ export default function BookingsPage() {
             b.order_no,
             b.razorpay_order_id || "On Site Payment",
             b.customer_name,
+            b.customer_mobile || "N/A",
             b.service_name,
             b.service_types.join(", "),
             b.date,
@@ -146,6 +149,7 @@ export default function BookingsPage() {
                 "Order No",
                 "Razorpay ID",
                 "Customer",
+                "Mobile",
                 "Service",
                 "Types",
                 "Date",
@@ -210,6 +214,7 @@ export default function BookingsPage() {
             head: [["Detail Field", "Information Values"]],
             body: [
                 ["Customer Name", booking.customer_name],
+                ["Customer Mobile", booking.customer_mobile || "Not Provided"],
                 ["Service Requested", booking.service_name],
                 ["Selected Sub-Categories / Types", booking.service_types.join(", ")],
                 ["Execution Date", booking.date],
@@ -270,11 +275,13 @@ export default function BookingsPage() {
         let results = bookings;
 
         if (search.trim() !== "") {
+            const query = search.toLowerCase();
             results = results.filter(
                 (b) =>
-                    (b.customer_name?.toLowerCase() || "").includes(search.toLowerCase()) ||
-                    (b.service_name?.toLowerCase() || "").includes(search.toLowerCase()) ||
-                    (b.order_no?.toLowerCase() || "").includes(search.toLowerCase())
+                    (b.customer_name?.toLowerCase() || "").includes(query) ||
+                    (b.service_name?.toLowerCase() || "").includes(query) ||
+                    (b.order_no?.toLowerCase() || "").includes(query) ||
+                    (b.customer_mobile?.toLowerCase() || "").includes(query)
             );
         }
 
@@ -453,7 +460,7 @@ export default function BookingsPage() {
                         <Search className="absolute left-3 top-3 text-gray-400 w-5 h-5" />
                         <input
                             type="text"
-                            placeholder="Search..."
+                            placeholder="Search name, phone, order..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-instafitcore-green focus:border-instafitcore-green outline-none transition-all"
@@ -550,6 +557,12 @@ export default function BookingsPage() {
                                     </td>
                                     <td className="p-4 font-semibold">
                                         {b.customer_name}
+                                        {b.customer_mobile && (
+                                            <div className="flex items-center space-x-1 text-xs text-blue-600 font-normal mt-1">
+                                                <Phone className="w-3 h-3" />
+                                                <span>{b.customer_mobile}</span>
+                                            </div>
+                                        )}
                                         <div className="text-xs text-gray-500 font-normal mt-0.5">Types: {b.service_types.join(", ")}</div>
                                     </td>
                                     <td className="p-4 font-mono text-xs text-gray-600 whitespace-nowrap">
@@ -794,6 +807,13 @@ export default function BookingsPage() {
                                     <div>
                                         <p className="text-gray-500 font-medium">Customer Name</p>
                                         <p className="text-base font-bold text-gray-900 mt-0.5">{detailBooking.customer_name}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-gray-500 font-medium">Customer Mobile</p>
+                                        <p className="text-base font-bold text-gray-900 mt-0.5 flex items-center gap-1.5">
+                                            <Phone className="w-4 h-4 text-indigo-500" />
+                                            {detailBooking.customer_mobile || "Not Provided"}
+                                        </p>
                                     </div>
                                     <div>
                                         <p className="text-gray-500 font-medium">Service Name</p>
