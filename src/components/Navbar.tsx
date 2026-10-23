@@ -43,6 +43,7 @@ export default function FullNavbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [categoryShrunk, setCategoryShrunk] = useState(false);
 
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -201,31 +202,20 @@ export default function FullNavbar() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  const [categoryShrunk, setCategoryShrunk] = useState(false);
-
-  const lastScrollY = useRef(0);
-
   useEffect(() => {
     let isShrunk = false;
-
     const handleScroll = () => {
       const currentY = window.scrollY;
 
-      // Header shadow (simple, stable)
       setIsScrolled(currentY > 80);
 
-      // CATEGORY IMAGES — hysteresis
       if (!isShrunk && currentY > 120) {
         isShrunk = true;
         setCategoryShrunk(true);
-      }
-
-      if (isShrunk && currentY < 40) {
+      } else if (isShrunk && currentY < 40) {
         isShrunk = false;
         setCategoryShrunk(false);
       }
-
-      lastScrollY.current = currentY;
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -468,14 +458,11 @@ useEffect(() => {
             )}
           </div>
         </div>
-      </header>
 
-      {/* CATEGORY BAR (Home only) */}
+      {/* CATEGORY BAR (Home only; stays attached to the sticky header) */}
       {pathname?.replace(/\/$/, "") === "/site" && (
         <div
-          className={`sticky z-40 bg-white border-b border-gray-100 shadow-sm transition-all duration-300 overflow-visible 
-          ${categoryShrunk ? "-mt-7 py-2 top-[72px] md:top-[90px]" : "-mt-7 py-4 top-[80px] md:top-[90px]"} 
-      pt-[env(safe-area-inset-top)]`}
+          className={`relative z-40 bg-white border-b border-gray-100 shadow-sm overflow-visible transition-[padding] duration-500 ease-in-out ${categoryShrunk ? "py-2" : "py-4"}`}
         >
           <div className="max-w-7xl mx-auto px-4 md:px-6">
             <div
@@ -495,11 +482,7 @@ useEffect(() => {
                   >
                     {/* Image Container */}
                     <div
-                      className={`rounded-full overflow-hidden border border-gray-100 flex items-center justify-center transition-all duration-300 ease-in-out shadow-sm
-                  ${categoryShrunk
-                          ? "w-0 h-0 opacity-0 mb-0 scale-0"
-                          : "w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 mb-2 group-hover:scale-105 group-hover:border-[#8ed26b]"
-                        }`}
+                      className={`rounded-full overflow-hidden border border-gray-100 flex items-center justify-center transition-[width,height,opacity,transform,margin] duration-500 ease-in-out shadow-sm group-hover:border-[#8ed26b] ${categoryShrunk ? "w-0 h-0 opacity-0 scale-0 mb-0" : "w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 opacity-100 scale-100 mb-2 group-hover:scale-105"}`}
                     >
                       <Image
                         src={item.image_url}
@@ -513,15 +496,12 @@ useEffect(() => {
 
                     <div className="flex flex-col items-center justify-center">
                       <p
-                        className={`text-center text-[11px] md:text-sm font-bold text-gray-800
-                    whitespace-nowrap transition-all duration-300 group-hover:text-[#8ed26b]
-                    ${categoryShrunk ? "mt-0" : "mt-1"}`}
+                        className="text-center text-[11px] md:text-sm font-bold text-gray-800 mt-1 whitespace-nowrap transition-colors duration-300 group-hover:text-[#8ed26b]"
                       >
                         {item.name}
                       </p>
 
-                      <p className={`text-[10px] md:text-xs text-gray-500 font-medium whitespace-nowrap
-                  ${categoryShrunk ? "hidden" : "block"}`}>
+                      <p className="text-[10px] md:text-xs text-gray-500 font-medium whitespace-nowrap">
                         {item.subtitle}
                       </p>
                     </div>
@@ -550,6 +530,7 @@ useEffect(() => {
           </div>
         </div>
       )}
+      </header>
       <AuthModal showAuth={showAuth} setShowAuth={setShowAuth} initialMode={mode} />
     </>
   );
