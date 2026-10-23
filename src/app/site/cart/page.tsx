@@ -401,6 +401,7 @@ const CartItemCard: React.FC<{
                             src={item.service.image_url}
                             alt={item.service.service_name || "Service Image"}
                             fill
+                            sizes="(max-width: 640px) 80px, 96px"
                             style={{ objectFit: "cover" }}
                         />
                     ) : (

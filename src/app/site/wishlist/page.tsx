@@ -82,6 +82,7 @@ const WishlistItemCard: React.FC<{
                         src={imageSource}
                         alt={item.service?.service_name || "Service Image"}
                         layout="fill"
+                        sizes="(max-width: 640px) 100vw, 128px"
                         objectFit="cover"
                         unoptimized={isBase64} // Disable optimization for Base64 images
                         className="transition-transform duration-500 hover:scale-105"

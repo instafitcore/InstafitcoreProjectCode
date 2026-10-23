@@ -474,7 +474,7 @@ useEffect(() => {
       {pathname?.replace(/\/$/, "") === "/site" && (
         <div
           className={`sticky z-40 bg-white border-b border-gray-100 shadow-sm transition-all duration-300 overflow-visible 
-      ${categoryShrunk ? "py-2 top-[72px]" : "py-4 top-[80px] md:top-[90px]"} 
+          ${categoryShrunk ? "-mt-7 py-2 top-[72px] md:top-[90px]" : "-mt-7 py-4 top-[80px] md:top-[90px]"} 
       pt-[env(safe-area-inset-top)]`}
         >
           <div className="max-w-7xl mx-auto px-4 md:px-6">
@@ -506,6 +506,7 @@ useEffect(() => {
                         alt={item.name}
                         width={80}
                         height={80}
+                        loading="eager"
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -526,22 +527,20 @@ useEffect(() => {
                     </div>
                   </Link>
 
-                  {/* Hover Dropdown (same as your original) */}
+                  {/* Show subcategories on hover. */}
                   {item.subServices && item.subServices.length > 0 && (
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 w-64 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto scale-95 group-hover:scale-100 transform transition-all duration-300 z-50 hidden md:block">
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 w-64 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto scale-95 group-hover:scale-100 transform transition-all duration-200 z-50 hidden md:block">
                       <div className="bg-white border border-gray-200 rounded-xl shadow-2xl overflow-hidden">
-                        <div className="px-4 py-3">
-                          <ul className="text-gray-700 text-sm space-y-2 text-left">
-                            {item.subServices.map((sub, idx) => (
-                              <li key={idx}>
-                                <Link href={item.link} className="hover:text-[#8ed26b] transition-colors flex items-start gap-2">
-                                  <span className="text-[#8ed26b]">•</span>
-                                  <span>{sub}</span>
-                                </Link>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
+                        <ul className="px-4 py-3 text-gray-700 text-sm space-y-2 text-left">
+                          {item.subServices.map((sub) => (
+                            <li key={sub}>
+                              <Link href={item.link} className="hover:text-[#8ed26b] transition-colors flex items-start gap-2">
+                                <span className="text-[#8ed26b]">•</span>
+                                <span>{sub}</span>
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
                     </div>
                   )}

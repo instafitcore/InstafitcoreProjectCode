@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import Image from "next/image";
 import { Mail, Phone, Facebook, Linkedin } from "lucide-react";
 
 const LOGO_PATH = "/footerinstlogo.png";
@@ -16,9 +17,12 @@ export default function Footer() {
           {/* --- 1. COMPANY INFO --- */}
           <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
             <div className="mb-6">
-              <img
+              <Image
                 src={LOGO_PATH}
                 alt="InstaFitCore Logo"
+                width={280}
+                height={112}
+                style={{ width: "auto" }}
                 className="h-16 md:h-20 lg:h-28 w-auto"
               />
             </div>

@@ -211,6 +211,7 @@ export default function ReviewsPage() {
                           src={img}
                           alt="Review"
                           fill
+                          sizes="(max-width: 768px) 50vw, 25vw"
                           className="object-cover hover:scale-105 transition"
                         />
                       </div>

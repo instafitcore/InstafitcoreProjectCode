@@ -23,8 +23,30 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Instafitcore",
-  description: "Instafitcore – Home Solutions",
+  metadataBase: new URL("https://instafitcore.com"),
+  title: {
+    default: "Furniture Installation & Home Services in Bengaluru | InstaFitCore",
+    template: "%s | InstaFitCore",
+  },
+  description:
+    "Book professional furniture installation, dismantling, repair, modular kitchen setup, and relocation services in Bengaluru with InstaFitCore.",
+  applicationName: "InstaFitCore",
+  openGraph: {
+    type: "website",
+    url: "https://instafitcore.com/site/",
+    siteName: "InstaFitCore",
+    title: "Furniture Installation & Home Services in Bengaluru | InstaFitCore",
+    description:
+      "Professional furniture installation, dismantling, repair, modular kitchen setup, and relocation services in Bengaluru.",
+    locale: "en_IN",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Furniture Installation & Home Services in Bengaluru | InstaFitCore",
+    description:
+      "Professional furniture installation, dismantling, repair, modular kitchen setup, and relocation services in Bengaluru.",
+  },
+  robots: { index: true, follow: true },
   icons: {
     icon: [{ url: "/logoicon.png", sizes: "20x30", type: "image/png" }],
   },

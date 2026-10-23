@@ -299,7 +299,7 @@ function ProjectCard({ project, mediaUrls, mediaTypes, onEdit, onDelete }: { pro
         {currentType === "video" ? (
           <video src={currentUrl} className="h-full w-full object-cover" autoPlay muted loop />
         ) : (
-          <Image src={currentUrl} alt={project.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+          <Image src={currentUrl} alt={project.title} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />
         )}
         <div className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-slate-700">
           {currentType} {mediaUrls.length > 1 && `(${currentIndex + 1}/${mediaUrls.length})`}
